@@ -9,12 +9,13 @@ certs/*.csr
 certs/*.srl
 
 # Runtime data - do not version control
-data/es_data/
-data/vscode/
-data/pihole/
+data/es_data/*
+!data/es_data/.gitkeep
 
 # Logs
-logs/
+logs/*
+!logs/nginx/.gitkeep
+!logs/pihole/.gitkeep
 
 # Docker & system
 .DS_Store
