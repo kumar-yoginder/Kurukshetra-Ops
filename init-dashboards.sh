@@ -92,26 +92,22 @@ echo "Step 2: Creating Pi-hole Elasticsearch ingest pipeline..."
 PIPELINE_RESPONSE=$(curl -sk -X PUT "https://localhost/elastic/_ingest/pipeline/pihole-pipeline" \
   -H 'Content-Type: application/json' \
   -d '{
-  "description": "Pi-hole log parser with ECS fix",
+  "description": "Multi-pattern Pi-hole log parser",
   "processors": [
     {
       "grok": {
         "field": "message",
-        "patterns": ["%{SYSLOGTIMESTAMP:timestamp} %{DATA:temp_process}\\[%{NUMBER:pid}\\]: %{WORD:action} %{IPORHOST:domain} is %{IP:ip}"],
+        "patterns": [
+          "%{SYSLOGTIMESTAMP:timestamp} %{DATA:process.name}\\[%{NUMBER:process.pid}\\]: %{WORD:action} %{IPORHOST:domain} is %{IP:ip}",
+          "%{SYSLOGTIMESTAMP:timestamp} %{DATA:process.name}\\[%{NUMBER:process.pid}\\]: %{WORD:action} %{IPORHOST:domain} is %{GREEDYDATA:answer}"
+        ],
         "ignore_missing": true
       }
     },
     {
-      "rename": {
-        "field": "temp_process",
-        "target_field": "process.name",
-        "ignore_missing": true
-      }
-    },
-    {
-      "remove": {
-        "field": "pid",
-        "ignore_missing": true
+      "set": {
+        "field": "event.ingested",
+        "value": "{{_ingest.timestamp}}"
       }
     }
   ]
