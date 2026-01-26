@@ -67,9 +67,10 @@ Divine command operations orchestration platform. A complete ops stack for manag
    sudo ./setup.sh
    ```
    This script:
+   - ✅ Creates all required directories (`certs/`, `data/`, `logs/`)
    - ✅ Fixes Elasticsearch data directory ownership (UID 1000)
-   - ✅ Creates and configures all required directories
-   - ✅ Sets proper permissions for logs and data volumes
+   - ✅ Sets proper permissions for certificates, logs, and data volumes
+   - ✅ Creates `pihole.log` file (required for docker volume mount)
    - ✅ Validates `docker-compose.yml` for required changes
    - ✅ Provides pre-flight checklist
 
@@ -134,7 +135,9 @@ Kurukshetra-Ops/
 Automatically generates self-signed TLS certificates for Nginx on first run.
 - **Uses:** Alpine Linux, OpenSSL
 - **Output:** `certs/ca.key`, `certs/ca.crt`, `certs/server.key`, `certs/server.crt`
+- **Directory:** `certs/` created and configured by setup script
 - **⚠️ Important:** Private keys in `certs/` are excluded from git (see `.gitignore`)
+- **Lifecycle:** Runs once on first `docker compose up`, then stays in standby
 
 ### pihole
 DNS sinkhole and ad blocker with web admin interface

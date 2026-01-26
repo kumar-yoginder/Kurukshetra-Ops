@@ -37,11 +37,16 @@ mkdir -p data/pihole
 mkdir -p data/vscode
 mkdir -p logs/nginx
 mkdir -p logs/pihole
+mkdir -p certs
 
 # Set correct ownership for Elasticsearch (runs as UID 1000)
 echo "  - Setting Elasticsearch data directory ownership (1000:1000)..."
 chown 1000:1000 data/es_data/
 chmod 755 data/es_data/
+
+# Set permissions for certs directory (cert-gen service writes here)
+echo "  - Setting certs directory permissions..."
+chmod 755 certs/
 
 # Set permissions for logs
 echo "  - Setting logs directory permissions..."
