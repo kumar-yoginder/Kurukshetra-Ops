@@ -100,9 +100,9 @@ Divine command operations orchestration platform. A complete ops stack for manag
    ./init-dashboards.sh
    ```
    This script:
-   - ✅ Waits for Elasticsearch, Kibana, and Filebeat to be ready
    - ✅ Loads pre-built Nginx dashboards
-   - ✅ Creates custom Pi-hole log parser pipeline
+   - ✅ Creates custom Pi-hole log parser pipeline (ECS-compliant)
+   - ✅ Configures Filebeat index rollover for index lifecycle management
    - ✅ Validates setup completion
 
    **Or run commands manually (via Nginx proxy):**

@@ -124,11 +124,30 @@ else
 fi
 
 echo ""
+
+# Step 3: Configure Filebeat Index Rollover
+echo "Step 3: Configuring Filebeat index rollover..."
+ROLLOVER_RESPONSE=$(curl -sk -X POST "https://localhost/elastic/filebeat-8.10.2/_rollover" \
+  -H 'Content-Type: application/json' \
+  -d '{}')
+
+if echo "$ROLLOVER_RESPONSE" | grep -q '"acknowledged":true\|"rolled_over":false'; then
+    echo "✓ Filebeat index rollover configured"
+else
+    echo "⚠️  Rollover response: $ROLLOVER_RESPONSE"
+fi
+
+echo ""
 echo "=========================================="
 echo "Setup Complete! ✓"
 echo "=========================================="
 echo ""
-echo "Available dashboards and pipelines:"
+echo "Configured components:"
+echo "  - Filebeat Dashboards (Nginx, System logs)"
+echo "  - Pi-hole Ingest Pipeline (with ECS compliance)"
+echo "  - Filebeat Index Rollover (for index lifecycle management)"
+echo ""
+echo "Available services:"
 echo "  - Kibana Dashboards: https://localhost/kibana"
 echo "    - Nginx access & error logs"
 echo "    - System logs"
