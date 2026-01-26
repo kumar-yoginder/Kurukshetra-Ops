@@ -50,6 +50,12 @@ chown -R 1000:1000 logs/pihole/
 chmod 755 logs/nginx/
 chmod 755 logs/pihole/
 
+# Create pihole.log file (docker volume mount requires file, not directory)
+echo "  - Creating pihole.log file..."
+touch logs/pihole/pihole.log
+chown 1000:1000 logs/pihole/pihole.log
+chmod 644 logs/pihole/pihole.log
+
 # Set permissions for other data directories
 echo "  - Setting Pi-hole data directory permissions..."
 mkdir -p data/pihole
