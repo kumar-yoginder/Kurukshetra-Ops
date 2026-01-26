@@ -1,0 +1,158 @@
+---
+name: kurukshetra-ops
+services:
+  cert-gen:
+    image: alpine:latest
+    container_name: cert-gen
+    volumes:
+      - ./certs:/certs
+    deploy:
+      resources:
+        limits:
+          memory: 50M
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - >
+        apk add --no-cache openssl &&
+
+        if [ ! -f /certs/ca.crt ]; then
+          openssl genrsa -out /certs/ca.key 4096 &&
+          openssl req -x509 -new -nodes -key /certs/ca.key -sha256 -days 3650 \
+            -out /certs/ca.crt \
+            -subj '/C=IN/ST=KA/L=BLR/O=Kurukshetra-Ops/OU=Divine-Command/CN=Kurukshetra-Root-CA' &&
+          openssl genrsa -out /certs/server.key 2048 &&
+          openssl req -new -key /certs/server.key \
+            -out /certs/server.csr \
+            -subj '/C=IN/ST=KA/L=BLR/O=Kurukshetra-Ops/OU=Dwarka-Gateway/CN=dwarka.gateway' &&
+          openssl x509 -req -in /certs/server.csr \
+            -CA /certs/ca.crt -CAkey /certs/ca.key -CAcreateserial \
+            -out /certs/server.crt -days 365;
+        fi;
+
+        echo 'Certificates verified. Entering standby...' && tail -f /dev/null
+    healthcheck:
+      test:
+        - CMD
+        - test
+        - -f
+        - /certs/server.crt
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 10s
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    environment:
+      - TZ=Asia/Kolkata
+      - FTLCONF_webserver_api_password=password
+      - FTLCONF_dns_listeningMode=ALL
+      - FTLCONF_dns_hosts=192.168.0.101 dwarka.gateway;192.168.0.108 Indraprastha
+      - INTERFACE=eth0
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+    volumes:
+      - ./logs/pihole/pihole.log:/var/log/pihole/pihole.log
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+      - SYS_TIME
+    restart: unless-stopped
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - ./data/es_data:/usr/share/elasticsearch/data
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -s http://localhost:9200/_cluster/health | grep -vq
+          '"status":"red"'
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 180s
+    restart: unless-stopped
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.10.2
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./logs/nginx:/usr/share/filebeat/logs/nginx:ro
+      - ./logs/pihole/pihole.log:/usr/share/filebeat/logs/pihole/pihole.log:ro
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.10.2
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_BASEPATH=/kibana
+      - SERVER_REWRITEBASEPATH=true
+      - SERVER_PUBLICBASEURL="https://dwarka.gateway/kibana"
+      - NODE_OPTIONS=--max-old-space-size=1024
+      - xpack.security.encryptionKey=something_at_least_32_chars_long_1
+      - xpack.encryptedSavedObjects.encryptionKey=something_at_least_32_chars_long_2
+      - xpack.reporting.encryptionKey=something_at_least_32_chars_long_3
+    deploy:
+      resources:
+        limits:
+          memory: 1500M
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:5601/api/status
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+  nginx:
+    image: nginx:stable-alpine
+    container_name: kurukshetra-gateway
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./config/nginx/www:/usr/share/nginx/html:ro
+      - ./logs/nginx:/var/log/nginx
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    depends_on:
+      cert-gen:
+        condition: service_healthy
+      pihole:
+        condition: service_started
+    restart: unless-stopped

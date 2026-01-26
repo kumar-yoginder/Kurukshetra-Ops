@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="sa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurukshetra Gateway</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #0f0f0f; /* Deep Black */
+            color: #d4af37; /* Metallic Gold */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .container {
+            padding: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            max-width: 90%;
+        }
+
+        .sanskrit-quote {
+            font-size: clamp(2rem, 8vw, 5rem); /* Adaptive text size */
+            margin: 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .translation {
+            margin-top: 20px;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-style: italic;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* Subtle pulse animation */
+        .glow {
+            animation: pulse 4s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container glow">
+        <h1 class="sanskrit-quote">अन्तः अस्ति प्रारम्भः</h1>
+        <div class="translation">Antah Asti Prarambhah</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,59 @@
+filebeat.inputs:
+  - type: container
+    enabled: true
+    paths:
+      - "/var/lib/docker/containers/*/*.log"
+    # FIX: This tells Filebeat to look inside the Docker JSON to find the actual log
+    stream: all
+
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+      - add_host_metadata: ~
+      # FIX: This decodes the JSON logs (like the ones from Filebeat/Elastic) 
+      # so you see fields instead of one long string
+      - decode_json_fields:
+          fields: ["message"]
+          target: ""
+          overwrite_keys: true
+
+  # System Logs
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/auth.log
+      - /var/log/syslog
+    fields:
+      log_source: system
+
+  # Pi-hole Logs (Targeted for Pipeline)
+  - type: log
+    enabled: true
+    paths:
+      - "/usr/share/filebeat/logs/pihole/pihole.log"
+    fields:
+      log_source: pihole
+
+filebeat.modules:
+  - module: nginx
+    access:
+      enabled: true
+      var.paths: ["/usr/share/filebeat/logs/nginx/access.log"]
+    error:
+      enabled: true
+      var.paths: ["/usr/share/filebeat/logs/nginx/error.log"]
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  # Only send Pi-hole logs to the custom Grok pipeline
+  pipelines:
+    - pipeline: "pihole-pipeline"
+      when.equals:
+        fields.log_source: "pihole"
+
+setup.kibana:
+  host: "kibana:5601"
+  path: "/kibana"
+
+setup.template.name: "filebeat"
+setup.template.pattern: "filebeat-*"

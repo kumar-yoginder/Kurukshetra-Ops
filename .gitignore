@@ -1,0 +1,32 @@
+# Sensitive files and credentials
+.env
+.env.local
+.env.*.local
+
+# Private keys and certificates
+certs/*.key
+certs/*.csr
+certs/*.srl
+
+# Runtime data - do not version control
+data/es_data/
+data/vscode/
+data/pihole/
+
+# Logs
+logs/
+
+# Docker & system
+.DS_Store
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
