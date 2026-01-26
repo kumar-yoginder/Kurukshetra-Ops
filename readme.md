@@ -61,7 +61,26 @@ Divine command operations orchestration platform. A complete ops stack for manag
    nano docker-compose.yml
    ```
 
-3. **Start services:**
+3. **Automated Setup (⚠️ Recommended):**
+   Run the setup script to automatically fix all permissions and validate configuration:
+   ```bash
+   sudo ./setup.sh
+   ```
+   This script:
+   - ✅ Fixes Elasticsearch data directory ownership (UID 1000)
+   - ✅ Creates and configures all required directories
+   - ✅ Sets proper permissions for logs and data volumes
+   - ✅ Validates `docker-compose.yml` for required changes
+   - ✅ Provides pre-flight checklist
+
+   **Or manually set permissions:**
+   ```bash
+   sudo chown 1000:1000 data/es_data/
+   ```
+   - ⚠️ **Critical:** Elasticsearch container runs as user 1000
+   - Without this, Elasticsearch will fail with permission denied errors
+
+4. **Start services:**
    ```bash
    docker compose up -d
    ```
@@ -209,6 +228,7 @@ docker compose exec elasticsearch sh
 - **[instruction.md](instruction.md)** — Complete security, hygiene, and operations guidelines
 - **[docker-compose.yml](docker-compose.yml)** — Service configurations and deployment specs
 - **[dns-toggle.sh](dns-toggle.sh)** — DNS management utility
+- **[setup.sh](setup.sh)** — Automated pre-deployment setup script
 
 ## 🤝 Contributing
 
@@ -217,7 +237,51 @@ docker compose exec elasticsearch sh
 3. Test changes with `docker compose up` before committing
 4. Follow guidelines in [instruction.md](instruction.md)
 
-## 📄 License
+## � Troubleshooting
+
+### Elasticsearch fails to start with permission errors
+```
+permission denied
+docker.io/library/elasticsearch:8.10.2: chown: data/es_data: permission denied
+```
+**Solution:** Run the setup script or manually fix permissions:
+```bash
+sudo chown 1000:1000 data/es_data/
+```
+
+### Elasticsearch runs out of memory
+Increase heap size in `docker-compose.yml`:
+```yaml
+elasticsearch:
+  environment:
+    - ES_JAVA_OPTS=-Xms2g -Xmx2g  # Adjust as needed
+```
+
+### Pi-hole DNS not working
+1. Verify `FTLCONF_dns_hosts` is correctly set in `docker-compose.yml`
+2. Check network interface (`INTERFACE`): `ip addr`
+3. Restart Pi-hole: `docker compose restart pihole`
+
+### Kibana cannot connect to Elasticsearch
+1. Check Elasticsearch is healthy: `docker compose logs elasticsearch`
+2. Verify service name resolution: `docker compose exec kibana ping elasticsearch`
+3. Ensure Elasticsearch finished startup: `docker compose logs -f elasticsearch`
+
+### Certificate errors in Nginx
+1. Check cert generation: `docker compose logs cert-gen`
+2. Verify certificates exist: `ls -la certs/`
+3. Restart Nginx: `docker compose restart nginx`
+
+### View logs for any service
+```bash
+docker compose logs -f <service-name>
+# Examples:
+docker compose logs -f elasticsearch
+docker compose logs -f pihole
+docker compose logs -f nginx
+```
+
+## �📄 License
 
 Internal use only.
 
