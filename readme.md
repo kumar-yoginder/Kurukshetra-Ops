@@ -94,13 +94,44 @@ Divine command operations orchestration platform. A complete ops stack for manag
    docker compose ps
    ```
 
-5. **Access services:**
+6. **Initialize Dashboards & Pipelines (Optional but Recommended):**
+   After services are healthy, load Kibana dashboards and create the Pi-hole ingest pipeline:
+   ```bash
+   ./init-dashboards.sh
+   ```
+   This script:
+   - ✅ Waits for Elasticsearch, Kibana, and Filebeat to be ready
+   - ✅ Loads pre-built Nginx dashboards
+   - ✅ Creates custom Pi-hole log parser pipeline
+   - ✅ Validates setup completion
+
+   **Or run commands manually:**
+   ```bash
+   # Load Nginx dashboards
+   docker exec -it filebeat filebeat setup --dashboards
+
+   # Create Pi-hole ingest pipeline
+   curl -X PUT "localhost:9200/_ingest/pipeline/pihole-pipeline" \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "description": "Pi-hole log parser",
+       "processors": [{
+         "grok": {
+           "field": "message",
+           "patterns": ["%{SYSLOGTIMESTAMP:timestamp} %{DATA:process}\\[%{NUMBER:pid}\\]: %{WORD:action} %{IPORHOST:domain} is %{IP:ip}"],
+           "ignore_missing": true
+         }
+       }]
+     }'
+   ```
+
+7. **Access services:**
    - **Nginx:** `https://localhost` (or your configured domain)
    - **Pi-hole Dashboard:** `http://localhost/admin`
    - **Kibana:** `http://localhost:5601` or `https://localhost/kibana`
    - **Elasticsearch:** `http://localhost:9200`
 
-6. **Stop services:**
+8. **Stop services:**
    ```bash
    docker compose down
    ```
@@ -232,6 +263,7 @@ docker compose exec elasticsearch sh
 - **[docker-compose.yml](docker-compose.yml)** — Service configurations and deployment specs
 - **[dns-toggle.sh](dns-toggle.sh)** — DNS management utility
 - **[setup.sh](setup.sh)** — Automated pre-deployment setup script
+- **[init-dashboards.sh](init-dashboards.sh)** — Post-deployment dashboard & pipeline initialization
 
 ## 🤝 Contributing
 
