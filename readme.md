@@ -105,13 +105,13 @@ Divine command operations orchestration platform. A complete ops stack for manag
    - ✅ Creates custom Pi-hole log parser pipeline
    - ✅ Validates setup completion
 
-   **Or run commands manually:**
+   **Or run commands manually (via Nginx proxy):**
    ```bash
    # Load Nginx dashboards
    docker exec -it filebeat filebeat setup --dashboards
 
-   # Create Pi-hole ingest pipeline
-   curl -X PUT "localhost:9200/_ingest/pipeline/pihole-pipeline" \
+   # Create Pi-hole ingest pipeline (via Nginx proxy)
+   curl -sk -X PUT "https://localhost/elastic/_ingest/pipeline/pihole-pipeline" \
      -H 'Content-Type: application/json' \
      -d '{
        "description": "Pi-hole log parser",
@@ -126,10 +126,20 @@ Divine command operations orchestration platform. A complete ops stack for manag
    ```
 
 7. **Access services:**
-   - **Nginx:** `https://localhost` (or your configured domain)
-   - **Pi-hole Dashboard:** `http://localhost/admin`
-   - **Kibana:** `http://localhost:5601` or `https://localhost/kibana`
-   - **Elasticsearch:** `http://localhost:9200`
+   Since only ports 80/443 are exposed, all services are accessed through the Nginx reverse proxy:
+   
+   - **Nginx Home:** `https://localhost` (self-signed certificate)
+   - **Pi-hole DNS Admin:** `https://localhost/admin`
+   - **Kibana Dashboards:** `https://localhost/kibana`
+   - **Elasticsearch API:** `https://localhost/elastic`
+
+   **Note:** Self-signed certificates will show browser warnings — this is normal for local development.
+   
+   To bypass SSL warnings in curl:
+   ```bash
+   curl -sk https://localhost/elastic/_cluster/health
+   curl -sk https://localhost/kibana/api/status
+   ```
 
 8. **Stop services:**
    ```bash
@@ -214,9 +224,49 @@ Visualization and analytics UI for Elasticsearch
   - Update `SERVER_PUBLICBASEURL` to your domain
 - **Depends On:** Elasticsearch (waits for health check)
 
-## 🔐 Security
+## 🌐 Network Architecture
 
-For detailed security guidelines, permissions, and secret management, see **[instruction.md](instruction.md)**.
+**Single Entry Point via Nginx:**
+
+Only ports **80** and **443** are exposed to the host. All services are accessed through the Nginx reverse proxy:
+
+```
+┌─────────────────────────────────────┐
+│         Host (Your Machine)         │
+│   Port 80 (HTTP)                    │
+│   Port 443 (HTTPS/SSL)              │
+└──────────────┬──────────────────────┘
+               │
+      ┌────────▼─────────┐
+      │   Nginx Gateway  │
+      │ (Reverse Proxy)  │
+      └────────┬─────────┘
+               │
+    ┌──────────┼──────────┬──────────┬──────────┐
+    │          │          │          │          │
+    ▼          ▼          ▼          ▼          ▼
+  Pi-hole    Kibana  Elasticsearch  Nginx   Static
+  /admin     /kibana   /elastic     status   Content
+```
+
+**Service Routing:**
+
+| Service | Internal Port | Nginx Path | Access |
+|---------|---------------|-----------|--------|
+| Pi-hole Admin | 80 | `/admin/` | `https://localhost/admin` |
+| Pi-hole API | 80 | `/api/` | `https://localhost/api/` |
+| Kibana | 5601 | `/kibana/` | `https://localhost/kibana` |
+| Elasticsearch | 9200 | `/elastic/` | `https://localhost/elastic` |
+| Nginx Status | — | `/nginx_status` | `https://localhost/nginx_status` |
+
+**Benefits:**
+- ✅ Single SSL/TLS certificate for all services
+- ✅ Services not directly exposed to network
+- ✅ Centralized logging via Nginx
+- ✅ Easy to add new services
+- ✅ Better security posture
+
+## 🔐 Network & Security
 
 **Key practices:**
 - Never commit private keys, certificates, or `.env` files

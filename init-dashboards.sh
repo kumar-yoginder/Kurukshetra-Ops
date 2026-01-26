@@ -15,12 +15,12 @@ echo ""
 echo "Waiting for services to be ready..."
 echo ""
 
-# Check Elasticsearch
-echo "Checking Elasticsearch..."
+# Check Elasticsearch via Nginx proxy
+echo "Checking Elasticsearch (via Nginx proxy)..."
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; then
+    if curl -sk https://localhost/elastic/_cluster/health > /dev/null 2>&1; then
         echo "✓ Elasticsearch is ready"
         break
     fi
@@ -34,11 +34,11 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-# Check Kibana
-echo "Checking Kibana..."
+# Check Kibana via Nginx proxy
+echo "Checking Kibana (via Nginx proxy)..."
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if curl -s http://localhost:5601/api/status > /dev/null 2>&1; then
+    if curl -sk https://localhost/kibana/api/status > /dev/null 2>&1; then
         echo "✓ Kibana is ready"
         break
     fi
@@ -89,7 +89,7 @@ echo ""
 
 # Step 2: Create Pi-hole Ingest Pipeline
 echo "Step 2: Creating Pi-hole Elasticsearch ingest pipeline..."
-PIPELINE_RESPONSE=$(curl -s -X PUT "http://localhost:9200/_ingest/pipeline/pihole-pipeline" \
+PIPELINE_RESPONSE=$(curl -sk -X PUT "https://localhost/elastic/_ingest/pipeline/pihole-pipeline" \
   -H 'Content-Type: application/json' \
   -d '{
   "description": "Pi-hole log parser",
@@ -116,16 +116,18 @@ echo "Setup Complete! ✓"
 echo "=========================================="
 echo ""
 echo "Available dashboards and pipelines:"
-echo "  - Kibana Dashboards: http://localhost:5601"
+echo "  - Kibana Dashboards: https://localhost/kibana"
 echo "    - Nginx access & error logs"
 echo "    - System logs"
 echo "    - Pi-hole logs"
 echo ""
-echo "  - Elasticsearch Pipelines:"
+echo "  - Elasticsearch API: https://localhost/elastic"
 echo "    - pihole-pipeline: Custom Pi-hole log parser"
 echo ""
+echo "  - Pi-hole Admin: https://localhost/admin"
+echo ""
 echo "Next steps:"
-echo "1. Visit Kibana: http://localhost:5601"
+echo "1. Visit Kibana: https://localhost/kibana"
 echo "2. Create index patterns for:"
 echo "    - filebeat-*"
 echo "    - pihole-*"
