@@ -79,7 +79,6 @@ echo ""
 
 CONFIG_CHECKS=(
     "FTLCONF_webserver_api_password=password"
-    "FTLCONF_dns_hosts=192.168.0.101"
     "xpack.security.encryptionKey=something_at_least_32"
 )
 

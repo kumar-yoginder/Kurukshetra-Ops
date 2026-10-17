@@ -2,7 +2,9 @@
 
 # --- Kurukshetra DNS Toggle Utility ---
 
-MODE=$1
+set -e
+PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+MODE=${1:-}
 
 if [ "$MODE" == "recovery" ]; then
     echo "🛠️  Entering RECOVERY MODE (Host-based DNS for Docker Pulls)..."
@@ -14,7 +16,7 @@ if [ "$MODE" == "recovery" ]; then
     sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
     
     # 3. Force an immediate nameserver for current session
-    echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
+    echo "nameserver ${RECOVERY_DNS:-8.8.8.8}" | sudo tee /etc/resolv.conf
     
     # 4. Restart services
     sudo systemctl restart systemd-resolved
@@ -35,7 +37,7 @@ elif [ "$MODE" == "battle" ]; then
     echo "✅ Port 53 is now free. Starting Pi-hole..."
     
     # 4. Start Docker Containers
-    cd ~/homelab && docker compose up -d
+    cd "$PROJECT_DIR" && ./deploy.sh
 
 else
     echo "Usage: ./dns-toggle.sh [recovery|battle]"

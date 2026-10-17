@@ -2,6 +2,7 @@
 name: kurukshetra-ops
 services:
   cert-gen:
+    profiles: [gateway]
     image: alpine:latest
     container_name: cert-gen
     volumes:
@@ -48,12 +49,13 @@ services:
       - TZ=Asia/Kolkata
       - FTLCONF_webserver_api_password=password
       - FTLCONF_dns_listeningMode=ALL
-      - FTLCONF_dns_hosts=192.168.0.101 dwarka.gateway;192.168.0.108 Indraprastha
+      - FTLCONF_dns_hosts=${PIHOLE_LAN_IP:?Run ./deploy.sh --configure-only first} dwarka.gateway;${ADDITIONAL_DNS_HOSTS:-}
       - INTERFACE=eth0
     ports:
       - 53:53/tcp
       - 53:53/udp
     volumes:
+      - ./data/pihole:/etc/pihole
       - ./logs/pihole/pihole.log:/var/log/pihole/pihole.log
     deploy:
       resources:
@@ -65,6 +67,7 @@ services:
       - SYS_TIME
     restart: unless-stopped
   elasticsearch:
+    profiles: [monitoring]
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
     container_name: elasticsearch
     environment:
@@ -88,6 +91,7 @@ services:
       start_period: 180s
     restart: unless-stopped
   filebeat:
+    profiles: [monitoring]
     image: docker.elastic.co/beats/filebeat:8.10.2
     container_name: filebeat
     user: root
@@ -106,6 +110,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
   kibana:
+    profiles: [monitoring]
     image: docker.elastic.co/kibana/kibana:8.10.2
     container_name: kibana
     environment:
@@ -136,6 +141,7 @@ services:
       start_period: 120s
     restart: unless-stopped
   nginx:
+    profiles: [gateway]
     image: nginx:stable-alpine
     container_name: kurukshetra-gateway
     ports:
@@ -153,6 +159,4 @@ services:
     depends_on:
       cert-gen:
         condition: service_healthy
-      pihole:
-        condition: service_started
     restart: unless-stopped

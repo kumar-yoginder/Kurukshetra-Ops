@@ -1,5 +1,67 @@
 # Kurukshetra-Ops
 
+## Automatic network configuration
+
+Use `./deploy.sh` instead of `docker compose up -d` to detect the host IPv4
+address before startup. It chooses the interface on the lowest-metric default
+route, saves PIHOLE_LAN_IP in the ignored .env file, validates Compose, then
+forwards your arguments to Docker Compose.
+
+```sh
+./deploy.sh                              # detect address, start Pi-hole
+./deploy.sh --profile gateway up -d       # include HTTPS gateway
+./deploy.sh --profile monitoring up -d    # include monitoring
+./deploy.sh --configure-only             # update .env without restarting
+NETWORK_INTERFACE=eth0 ./deploy.sh        # choose an interface
+PIHOLE_LAN_IP=192.168.1.10 ./deploy.sh     # explicit address override example
+```
+
+ADDITIONAL_DNS_HOSTS in .env holds other machines' address/name entries.
+Those cannot be discovered reliably from this host. RECOVERY_DNS can override
+the public resolver used by dns-toggle.sh recovery. The Nginx resolver
+127.0.0.11 is Docker's internal resolver and must not be replaced by the LAN IP.
+
+Reserve Pi-hole's address in the router's DHCP settings. Auto-discovery updates
+Pi-hole's local hostname entry; it does not update DNS addresses advertised by
+your router or discover address changes continuously. Run deploy.sh again after
+a network change. Direct docker compose commands use the last saved address.
+
+## Running services independently
+
+Run commands from your project directory.
+Pi-hole is the only default service. Other services are optional.
+
+| Goal | Command |
+| --- | --- |
+| Start Pi-hole only on a stopped stack | `docker compose up -d` |
+| Start Pi-hole and HTTPS gateway | `docker compose --profile gateway up -d` |
+| Start Pi-hole and monitoring | `docker compose --profile monitoring up -d` |
+| Start all services | `docker compose --profile gateway --profile monitoring up -d` |
+| Start Elasticsearch alone | `docker compose up -d elasticsearch` |
+| Start Kibana with required Elasticsearch | `docker compose up -d kibana` |
+| Stop monitoring only | `docker compose stop filebeat kibana elasticsearch` |
+| Stop gateway only | `docker compose stop nginx cert-gen` |
+| Restart only Pi-hole | `docker compose restart pihole` |
+| Show all containers | `docker compose --profile "*" ps -a` |
+| Stop whole project | `docker compose --profile "*" stop` |
+
+Profiles select what starts; they do not stop existing containers.
+To switch to DNS only:
+```sh
+docker compose stop filebeat kibana elasticsearch nginx cert-gen
+docker compose up -d pihole
+```
+
+The HTTPS dashboard requires Nginx; DNS-only mode still filters port 53.
+Nginx tolerates stopped backends; their routes return 502 until they start.
+Kibana and Filebeat require Elasticsearch. Starting either includes that dependency.
+Stopping Elasticsearch interrupts their monitoring functionality.
+Use `up -d SERVICE` to start a service and dependencies; `stop SERVICE` stops it.
+Monitoring definitions are restored at their existing version 8.10.2;
+this change does not upgrade or start them.
+Older full-stack instructions below require the corresponding profiles.
+
+
 Divine command operations orchestration platform. A complete ops stack for managing infrastructure, services, and monitoring using Docker, Elasticsearch, Pi-hole DNS, Nginx, and Filebeat.
 
 ## 🎯 Project Overview
@@ -28,7 +90,7 @@ Divine command operations orchestration platform. A complete ops stack for manag
 |---------|----------|---------------|-------|
 | **pihole** | `TZ` | `Asia/Kolkata` | Change to your timezone |
 | **pihole** | `FTLCONF_webserver_api_password` | `password` | **MUST change** for security |
-| **pihole** | `FTLCONF_dns_hosts` | `192.168.0.101 dwarka.gateway;192.168.0.108 Indraprastha` | Update with your actual IPs/hostnames |
+| **pihole** | `FTLCONF_dns_hosts` | `Detected host IP for dwarka.gateway; additional hosts configured in .env` | Update with your actual IPs/hostnames |
 | **pihole** | `INTERFACE` | `eth0` | Verify your network interface |
 | **elasticsearch** | `ES_JAVA_OPTS` | `-Xms1g -Xmx1g` | Adjust heap based on available RAM |
 | **kibana** | `xpack.security.encryptionKey` | `something_at_least_32_chars...` | Change to random 32+ char string |
