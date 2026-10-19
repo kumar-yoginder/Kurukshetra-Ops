@@ -38,3 +38,7 @@ data/pihole/
 backups/
 
 .env.network-tmp
+
+# Generated gateway certificates and local recovery copies
+/certs/
+/docker-compose.yml.before-*

@@ -435,3 +435,13 @@ Internal use only.
 ---
 
 **Repository:** [github.com/kumar-yoginder/Kurukshetra-Ops](https://github.com/kumar-yoginder/Kurukshetra-Ops)
+
+## Pi-hole blocklists and automatic refresh
+
+Compose uses `config/pihole/bootstrap.sh` to seed a fresh Pi-hole database from
+`config/pihole/adlists.list` (StevenBlack, HaGeZi PRO, and HaGeZi TIF). Existing
+databases retain their lists and group assignments; edit those through the UI.
+The existing `./data/pihole` volume preserves the database across recreation.
+The startup wrapper changes Pi-hole's built-in Gravity cron job to daily at
+03:47 Asia/Kolkata and retains its other jobs. No host cron job is needed.
+`docker compose up -d` applies this configuration on the next recreation.
