@@ -8,9 +8,15 @@ marker = "# kurukshetra-public-status"
 result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
 if result.returncode not in (0, 1) or (result.returncode == 1 and "no crontab" not in result.stderr.lower()):
     raise SystemExit("Cannot safely read existing crontab")
-lines = [line for line in result.stdout.splitlines() if not line.endswith(marker)]
+lines = [line for line in result.stdout.splitlines() if not line.endswith(marker) and not line.endswith("# kurukshetra-tor-metrics")]
 command = "* * * * * /usr/bin/python3 " + shlex.quote(str(root / "scripts/monitoring/collect-status.py")) + " >/dev/null 2>&1 " + marker
 lines.append(command)
+lines.append("*/15 * * * * /usr/bin/python3 " + shlex.quote(str(root / "scripts/monitoring/collect-tor-metrics.py")) + " >/dev/null 2>&1 # kurukshetra-tor-metrics")
+client = root / "config/nginx/www/client"
+client.mkdir(exist_ok=True)
+(client / "windows-tor.ps1").write_text((root / "scripts/tor-client/windows/windows-tor.ps1").read_text())
+for name in ("tor-client.sh", "trial.sh"):
+    (client / name).write_text((root / "scripts/tor-client" / name).read_text())
 subprocess.run(["crontab", "-"], input="\n".join(lines)+"\n", text=True, check=True)
 subprocess.run(["/usr/bin/python3", str(root / "scripts/monitoring/collect-status.py")], check=True)
 print("Public status refresh installed: every minute, current user, read-only collector")

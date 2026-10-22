@@ -63,3 +63,7 @@ data/pihole/
 # Generated public status snapshot
 /config/nginx/www/status.json
 /config/nginx/www/.status-*
+
+/config/nginx/www/tor-metrics.json
+/config/nginx/www/.tor-*
+/config/nginx/www/client/

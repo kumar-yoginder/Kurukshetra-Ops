@@ -1,6 +1,6 @@
 # Client gateway only; no relay, exit or public SOCKS listener.
 ClientOnly 1
-SocksPort 0
+SocksPort 127.0.0.1:9050 IsolateSOCKSAuth
 ORPort 0
 User debian-tor
 DataDirectory /var/lib/tor

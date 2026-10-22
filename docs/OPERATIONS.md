@@ -12,7 +12,7 @@ This starts Pi-hole, certificate management, Nginx and Tor. Monitoring is option
 
 ## Images and layout
 
-Project images use CalVer tags: `kurukshetra/nginx-gateway:2026.10.23` and `kurukshetra/tor-gateway:2026.10.23`. Nginx retains the previously deployed upstream digest. Vendor services keep upstream version tags.
+Project images use CalVer tags: `kurukshetra/nginx-gateway:2026.10.23` and `kurukshetra/tor-gateway:2026.10.23.1`. Nginx retains the previously deployed upstream digest. Vendor services keep upstream version tags.
 
 - `config/`: service configuration and safe examples; site settings ignored.
 - `containers/`: custom image sources.
@@ -57,3 +57,13 @@ Use `./deploy.sh --monitoring up -d` to select monitoring. `--prepare` remains n
 The landing page shows only allowlisted service display names, basic container states and snapshot time. It publishes no image versions, IPs, ports, logs, environment, or credentials, and provides no management actions. Running without a health check is distinguished from healthy. Optional missing services display Not deployed.
 
 Install the per-user minute collector using `python3 scripts/monitoring/install-status-refresh.py`. Existing unrelated cron jobs are preserved. The browser fetches the ignored generated `status.json` every 30 seconds and marks snapshots stale after three minutes. The collector uses the operator existing Docker access; no Docker socket is mounted into Nginx. No API backend or container restart is required. To remove the schedule, use `crontab -e` and delete only the line ending `# kurukshetra-public-status`.
+
+## Public Tor details
+
+The Tor card opens anonymous peer activity, setup commands and cached Tor path measurements. No peer keys, LAN endpoint addresses or tunnel addresses are published. Recent handshake is not a connected-device guarantee. A private per-device peer bundle remains required; setup is Ubuntu 24.04 only. Public client-script downloads are generated from reviewed source when installing refresh jobs.
+
+`collect-tor-metrics.py` schedules a bounded 256 KiB HTTPS download through container-local SOCKS every 15 minutes. There is no public command endpoint and no direct-network fallback. Tor verification uses check.torproject.org; the sample uses Cloudflare speed-test download endpoint. Metrics can fail or time out. Sample throughput includes connection setup and is not maximum bandwidth. Probe exit IP may differ from clients or subsequent circuits. The SOCKS listener is loopback-only inside the Tor container, with no published port.
+
+The details remain public at the operator request. mTLS is deferred and not enabled. Remove the `# kurukshetra-tor-metrics` cron line to stop probes.
+
+Speed probe reference: [Cloudflare speed-test engine](https://github.com/cloudflare/speedtest/blob/main/README.md). This is a small sample, not its full methodology.

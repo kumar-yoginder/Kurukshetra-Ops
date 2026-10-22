@@ -28,7 +28,22 @@ for label, container in services:
     except (OSError, ValueError, subprocess.TimeoutExpired):
         pass
     rows.append({'name': label, 'state': state})
-payload = {'updated': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'services': rows}
+peers = []
+peer_state = 'unknown'
+try:
+    result = subprocess.run(['docker', 'exec', 'kurukshetra-ops-tor-gateway-1', 'wg', 'show', 'wg0', 'latest-handshakes'], capture_output=True, text=True, timeout=5)
+    if result.returncode == 0:
+        now = datetime.datetime.now(datetime.timezone.utc).timestamp()
+        for number, line in enumerate(sorted(result.stdout.splitlines()), 1):
+            key, timestamp = line.split()
+            age = max(0, int(now - int(timestamp))) if int(timestamp) else None
+            peers.append({'name': 'Peer ' + str(number), 'recent': age is not None and age <= 180,
+                          'handshake_age_seconds': age})
+        peer_state = 'available'
+except (OSError, ValueError, subprocess.TimeoutExpired):
+    pass
+payload = {'updated': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'services': rows,
+           'tor': {'peers': peers, 'peer_state': peer_state}}
 directory = root / 'config/nginx/www'
 fd, temporary = tempfile.mkstemp(prefix='.status-', dir=directory)
 try:
