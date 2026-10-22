@@ -29,4 +29,4 @@ Ethernet/Wi-Fi recovery runs as a separate host systemd service; Compose does no
 
 `deploy.sh` and `setup.sh` remain root entry points. Setup prepares directories and permissions using sudo; it does not start services. Configure private `.env` before deployment. Monitoring placeholders need replacement before enabling that optional profile.
 
-DNS maintenance lives in `scripts/dns/dns-toggle.sh`; dashboard initialization lives in `scripts/monitoring/init-dashboards.sh`. Root scripts retain the original commands and forward arguments. DNS recovery changes host resolver settings and restarts Docker. Dashboard initialization requires the optional monitoring stack. Neither runs during ordinary deployment.
+DNS maintenance lives in `scripts/dns/dns-toggle.sh`; dashboard initialization lives in `scripts/monitoring/init-dashboards.sh`. The former root wrappers have been removed; invoke the feature scripts directly. DNS recovery changes host resolver settings and restarts Docker. Dashboard initialization requires the optional monitoring stack. Neither runs during ordinary deployment.

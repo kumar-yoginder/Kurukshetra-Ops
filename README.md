@@ -173,7 +173,7 @@ Divine command operations orchestration platform. A complete ops stack for manag
 6. **Initialize Dashboards & Pipelines (Optional but Recommended):**
    After services are healthy, load Kibana dashboards and create the Pi-hole ingest pipeline:
    ```bash
-   ./init-dashboards.sh
+   ./scripts/monitoring/init-dashboards.sh
    ```
    This script:
    - ✅ Loads pre-built Nginx dashboards
