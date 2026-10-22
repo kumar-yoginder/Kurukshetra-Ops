@@ -19,7 +19,7 @@ $startMenu = Join-Path ([Environment]::GetFolderPath('Programs')) 'Kurukshetra T
 $shell = New-Object -ComObject WScript.Shell
 foreach ($folder in @($desktop,$startMenu)) {
     New-Item -ItemType Directory -Force -Path $folder | Out-Null
-    foreach ($action in @('Connect','Disconnect')) {
+    foreach ($action in @('Connect','Stop','Uninstall')) {
         # Encoding only avoids nested shortcut/PowerShell quoting. UAC is retained.
         $elevation = "Start-Process -FilePath '$powershell' -Verb RunAs -ArgumentList @('-NoProfile','-ExecutionPolicy','RemoteSigned','-File','`"$controller`"','-Action','$action')"
         $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($elevation))
@@ -31,6 +31,7 @@ foreach ($folder in @($desktop,$startMenu)) {
         $shortcut.IconLocation = $browser + ',0'
         $shortcut.Save()
     }
+    Remove-Item -LiteralPath (Join-Path $folder 'Disconnect Tor.lnk') -ErrorAction SilentlyContinue
     $shortcut = $shell.CreateShortcut((Join-Path $folder 'Open Tor Browser.lnk'))
     $shortcut.TargetPath = $browser
     $shortcut.Arguments = '--user-data-dir="' + $profileDirectory + '" --proxy-server=socks5://10.77.0.1:9050 --host-resolver-rules="MAP * ~NOTFOUND, EXCLUDE 10.77.0.1" --disable-quic http://pzhdfe7jraknpj2qgu5cz2u3i4deuyfwmonvzu5i3nyw4t4bmg7o5pad.onion/'
@@ -39,4 +40,4 @@ foreach ($folder in @($desktop,$startMenu)) {
     $shortcut.IconLocation = $browser + ',0'
     $shortcut.Save()
 }
-Write-Output 'Installed Connect Tor, Open Tor Browser, and Disconnect Tor shortcuts on Desktop and in Start menu.'
+Write-Output 'Installed Connect Tor, Open Tor Browser, Stop Tor, and Uninstall Tor shortcuts on Desktop and in Start menu.'

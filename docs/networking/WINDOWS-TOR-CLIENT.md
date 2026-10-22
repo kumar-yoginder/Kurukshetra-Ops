@@ -14,7 +14,7 @@ From Administrator PowerShell at the VM console:
 .\windows-tor.ps1 -Action Disconnect
 ```
 
-Install stores the private profile under an Administrators/SYSTEM-only directory in ProgramData without changing networking. Connect uses the official tunnel-service command and sets manual startup. Disconnect removes only that named service and retains private configuration. No timed rollback is implemented. Reboot or disconnect can restore ordinary direct networking. Tor supports application TCP and gateway DNS; generic UDP applications are not supported. The gateway drops client IPv6 rather than providing IPv6 egress.
+Install stores the private profile under an Administrators/SYSTEM-only directory in ProgramData without changing networking. Connect installs or starts the named tunnel service and sets Automatic startup. Stop (and the compatibility Disconnect action) disables startup and stops the service; Connect re-enables it. Uninstall removes the named service while retaining the protected private profile for reprovisioning. Normal connections have no timed rollback. A running full tunnel can block local SSH; use the VM console for recovery. Tor supports application TCP and gateway DNS; generic UDP applications are not supported. The gateway drops client IPv6 rather than providing IPv6 egress.
 
 Before declaring ready, test official client compatibility, DNS and IPv6 leaks, gateway outage with no direct fallback, manual recovery, and reboot behavior on a disposable/snapshotted VM. No such tests have been performed.
 
@@ -54,6 +54,10 @@ The updated controller and browser helper were installed without changing peer s
 
 ## Desktop and Start menu shortcuts
 
-The operator requested GUI entry points. install-shortcuts.ps1 installs Connect Tor, Open Tor Browser, and Disconnect Tor for the current user on Desktop and in Start menu/Kurukshetra Tor. Connect and Disconnect use normal UAC elevation; the browser shortcut launches the existing installed browser with the separate persistent Tor profile and proxy arguments. No default-browser profile or system proxy is changed. Connect auto-opens the browser; Open Tor Browser is useful when already connected and cannot load sites while disconnected. This is not installation of the separate Tor Browser application.
+The operator requested GUI entry points. install-shortcuts.ps1 installs Connect Tor, Open Tor Browser, Stop Tor, and Uninstall Tor for the current user on Desktop and in Start menu/Kurukshetra Tor. Connect, Stop and Uninstall use normal UAC elevation; the browser shortcut launches the existing installed browser with the separate persistent Tor profile and proxy arguments. No default-browser profile or system proxy is changed. Connect auto-opens the browser; Open Tor Browser is useful when already connected and cannot load sites while disconnected. This is not installation of the separate Tor Browser application.
 
 All six shortcut files and targets were verified; encoded elevation commands parsed successfully and retained Verb RunAs. No shortcut was clicked remotely to approve UAC. CurrentUser execution policy remained Undefined. Setup/Update also installs shortcuts when their installer is downloaded alongside the client.
+
+## Persistent mode
+
+The selected operating mode is always connected, including automatic service startup with Windows. The browser keeps a separate profile; both ordinary HTTPS sites and onion services use its SOCKS proxy. Closing the browser does not stop the tunnel. Stop is an explicit override that restores ordinary networking and disables automatic startup until Connect. Uninstall removes the service, but deliberately retains the private profile. Boot behavior still requires a reboot verification; earlier checkpoint sections describe historical trials.

@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('Install','Connect','Status','Check','Disconnect','Browser','Update')][string]$Action,
+    [ValidateSet('Install','Connect','Status','Check','Disconnect','Browser','Update','Stop','Uninstall')][string]$Action,
     [string]$ConfigPath
 )
 $ErrorActionPreference = 'Stop'
@@ -86,17 +86,19 @@ switch ($Action) {
     'Connect' {
         if (-not (Test-Path -LiteralPath $wireguard)) { throw 'Official WireGuard is not installed.' }
         Validate-Peer $peerFile
-        if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw 'A managed tunnel already exists; inspect Status first.' }
-        Invoke-TunnelCommand 'installtunnelservice' $peerFile
+        if (-not (Get-Service -Name $serviceName -ErrorAction SilentlyContinue)) {
+            Invoke-TunnelCommand 'installtunnelservice' $peerFile
+        }
         try {
-            Set-Service -Name $serviceName -StartupType Manual
+            Set-Service -Name $serviceName -StartupType Automatic
+            Start-Service -Name $serviceName
             (Get-Service -Name $serviceName).WaitForStatus('Running',[TimeSpan]::FromSeconds(15))
         } catch {
             $failure = $_
             try { Invoke-TunnelCommand 'uninstalltunnelservice' 'kurukshetra-tor' } catch { Write-Warning 'Automatic cleanup failed; use Disconnect locally.' }
             throw $failure
         }
-        Write-Output 'Tunnel running with manual startup. Run Check. Local network access may be blocked; keep the VM console available.'
+        Write-Output 'Persistent tunnel running with automatic startup. Run Check. Local network access may be blocked; keep the VM console available.'
         Open-ManagedBrowser
     }
     'Update' {
@@ -119,7 +121,14 @@ switch ($Action) {
         if ($result.IsTor -ne $true) { throw 'Tor egress not verified.' }
         Write-Output ('Tor verified; check-stream exit IP: ' + $result.IP)
     }
-    'Disconnect' {
+    { $_ -in @('Disconnect','Stop') } {
+        if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+            Set-Service -Name $serviceName -StartupType Disabled
+            Stop-Service -Name $serviceName
+        }
+        Write-Output 'Tunnel stopped and automatic startup disabled. Connect restores always-on mode.'
+    }
+    'Uninstall' {
         if (-not (Test-Path -LiteralPath $wireguard)) { throw 'Official WireGuard is not installed.' }
         if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
             Invoke-TunnelCommand 'uninstalltunnelservice' 'kurukshetra-tor'
