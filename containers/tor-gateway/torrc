@@ -1,6 +1,8 @@
 # Client gateway only; no relay, exit or public SOCKS listener.
 ClientOnly 1
 SocksPort 127.0.0.1:9050 IsolateSOCKSAuth
+# Browser proxy available only to authenticated WireGuard peers.
+SocksPort 10.77.0.1:9050 IsolateClientAddr IsolateSOCKSAuth
 ORPort 0
 User debian-tor
 DataDirectory /var/lib/tor

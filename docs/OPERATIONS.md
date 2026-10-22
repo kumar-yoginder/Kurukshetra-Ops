@@ -12,7 +12,7 @@ This starts Pi-hole, certificate management, Nginx and Tor. Monitoring is option
 
 ## Images and layout
 
-Project images use CalVer tags: `kurukshetra/nginx-gateway:2026.10.23` and `kurukshetra/tor-gateway:2026.10.23.1`. Nginx retains the previously deployed upstream digest. Vendor services keep upstream version tags.
+Project images use CalVer tags: `kurukshetra/nginx-gateway:2026.10.23` and `kurukshetra/tor-gateway:2026.10.23.2`. Nginx retains the previously deployed upstream digest. Vendor services keep upstream version tags.
 
 - `config/`: service configuration and safe examples; site settings ignored.
 - `containers/`: custom image sources.

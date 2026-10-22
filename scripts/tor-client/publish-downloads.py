@@ -7,7 +7,7 @@ import tempfile
 root = Path(__file__).resolve().parents[2]
 source = root / 'scripts/tor-client'
 target = root / 'config/nginx/www/client'
-files = {'ubuntu': ['tor-client.sh', 'trial.sh', 'local.env.example'], 'windows': ['windows-tor.ps1']}
+files = {'ubuntu': ['tor-client.sh', 'trial.sh', 'local.env.example'], 'windows': ['windows-tor.ps1', 'open-tor-chrome.ps1']}
 def publish(path, content):
     if path.is_symlink():
         raise SystemExit('Refusing symlink in generated download tree')

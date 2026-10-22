@@ -35,3 +35,9 @@ The first trial exposed a command-completion race: the controller invoked the Wi
 Current state after testing: disconnected, ordinary networking restored. This does not establish gateway-outage behavior, comprehensive DNS leak resistance, or reboot privacy. A reusable local test body is retained as windows/test-session.ps1; it expects the protected controller under ProgramData and must only be run with independently armed recovery.
 
 [Microsoft process-wait behavior](https://devblogs.microsoft.com/powershell/managing-processes-in-powershell/).
+
+## Onion browsing in Chrome
+
+The gateway itself retrieved the official Tor blog onion with HTTP 200 and resolved its virtual DNS mapping. Stock curl rejected direct onion resolution even with a supplied address; that was an unsuitable client test. Use `curl.exe --socks5-hostname 10.77.0.1:9050` while connected. The Tor SOCKS listener on the tunnel address is accepted only from wg0; Docker still publishes only WireGuard UDP. The local probe SOCKS listener remains loopback-only.
+
+`windows/open-tor-chrome.ps1` opens a separate Chrome profile with SOCKS5, proxy-side DNS and QUIC disabled. It does not alter the system proxy or provide Tor Browser fingerprint protections. Download it before connecting because local gateway HTTPS is intentionally unavailable under the full-tunnel policy. End-to-end Windows onion/browser verification is pending. [Chromium proxy documentation](https://chromium.googlesource.com/chromium/src/net/+/show/HEAD/docs/proxy.md).
