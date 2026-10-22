@@ -5,7 +5,7 @@ Run commands on the Pi from the repository root.
 ## Start the deployed stack
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.tor.yml --profile gateway --profile tor up -d --build
+docker compose -f docker-compose.yml --profile gateway --profile tor up -d --build
 ```
 
 This starts Pi-hole, certificate management, Nginx and Tor. Monitoring is optional. The bot is managed by its separate Compose project.
@@ -43,3 +43,5 @@ For a fresh checkout, create private `.env` with `PIHOLE_LAN_IP` and `PIHOLE_API
 Monitoring remains optional: use explicit Compose monitoring profiles and follow its separate configuration requirements. Host network recovery and guest Tor setup remain separate utilities.
 
 DNS maintenance lives in `scripts/dns/dns-toggle.sh`; dashboard initialization lives in `scripts/monitoring/init-dashboards.sh`. DNS recovery changes resolver settings and restarts Docker; neither maintenance utility runs during normal deployment.
+
+All services are defined in one `docker-compose.yml`. Gateway, Tor and monitoring remain separate opt-in profiles. The former Tor overlay file has been removed.

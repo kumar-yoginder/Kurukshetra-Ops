@@ -448,7 +448,7 @@ The startup wrapper changes Pi-hole's built-in Gravity cron job to daily at
 
 ## Optional Tor gateway prototype
 
-The gateway is an explicit overlay, separate from the default services. See
+The Tor gateway is an optional profile in the main Compose file. See
 [the Tor gateway guide](docs/networking/TOR-GATEWAY.md) and the implementation
 plan for its current validation state. Do not attach privacy-sensitive clients
 before guest egress restrictions and failure tests pass.

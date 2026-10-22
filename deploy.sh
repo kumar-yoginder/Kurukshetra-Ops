@@ -6,7 +6,7 @@ cd "$PROJECT_DIR"
 usage() {
     cat <<'HELP'
 Usage: ./deploy.sh [--gateway] [--tor] [--prepare] [COMPOSE COMMAND...]
-Default: Pi-hole only, up -d. --tor includes the Tor overlay and profile.
+Default: Pi-hole only, up -d. --tor enables the Tor profile.
 --gateway enables HTTPS gateway and certificate services.
 --prepare creates missing runtime mount paths without changing existing ownership.
 --configure-only validates configuration without starting services.
@@ -33,7 +33,6 @@ while [[ $# -gt 0 ]]; do
         *) break ;;
     esac
 done
-if "$tor"; then compose+=(-f docker-compose.tor.yml); fi
 compose+=("${profiles[@]}")
 # Compose validates required variables without printing their values.
 "${compose[@]}" config --quiet

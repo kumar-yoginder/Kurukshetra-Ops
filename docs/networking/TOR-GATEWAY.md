@@ -6,7 +6,7 @@ Gateway deployed and bootstrapped; one Ubuntu peer was provisioned and a reversi
 
 ## Layout
 
-- `docker-compose.tor.yml`: explicit overlay with optional `tor` profile.
+- `docker-compose.yml`: main Compose file with optional `tor` profile.
 - `containers/tor-gateway/`: official Debian base, distribution Tor/WireGuard/nftables packages, configuration and health check.
 - `config/tor-gateway/wg0.conf.example`: placeholder server peer configuration. Real `wg0.conf` and client exports are ignored.
 - Tor state resides in a private Docker volume; never export its cookie or state into Git.
@@ -29,7 +29,7 @@ Tor DNS supports a restricted set of records, not a full recursive DNS service. 
 4. Start the gateway only after this phase is reviewed:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.tor.yml --profile tor up -d --no-deps tor-gateway
+docker compose -f docker-compose.yml --profile tor up -d --no-deps tor-gateway
 ```
 
 5. Observe Tor bootstrap and health before attaching any peer. Health checks report readiness; an unhealthy status alone does not restart a Docker container.
@@ -38,8 +38,8 @@ docker compose -f docker-compose.yml -f docker-compose.tor.yml --profile tor up 
 ## Non-deploying checks
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.tor.yml --profile tor config --quiet
-docker compose -f docker-compose.yml -f docker-compose.tor.yml --profile tor build tor-gateway
+docker compose -f docker-compose.yml --profile tor config --quiet
+docker compose -f docker-compose.yml --profile tor build tor-gateway
 docker run --rm --network none --entrypoint tor kurukshetra/tor-gateway:2026.10.23 --verify-config -f /etc/tor/torrc
 ```
 
@@ -50,7 +50,7 @@ The entrypoint installs namespace firewall rules before creating the tunnel, the
 Stop only the gateway:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.tor.yml --profile tor stop tor-gateway
+docker compose -f docker-compose.yml --profile tor stop tor-gateway
 ```
 
 Do not run whole-project `down` or flush host firewall rules as a rollback. Existing Pi-hole/Nginx services must remain running. A properly configured guest should lose Internet access when this service is stopped. Restore guest networking only deliberately using its recorded baseline and recovery path. Retain peer keys/Tor state unless explicitly retiring the service; deleting them is not routine cleanup.
