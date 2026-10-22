@@ -36,7 +36,7 @@ function Validate-Peer([string]$Path) {
         if ($values[$key] -notmatch '^[A-Za-z0-9+/]{43}=$') { throw 'Missing or invalid peer key.' }
     }
     $routes = @($values['AllowedIPs'] -split ',' | ForEach-Object { $_.Trim() } | Sort-Object)
-    if (($routes -join ',') -ne '0.0.0.0/0,::/0') { throw 'Require AllowedIPs = 0.0.0.0/0, ::/0 for the full-tunnel guard.' }
+    if ($routes.Count -ne 2 -or $routes -notcontains '0.0.0.0/0' -or $routes -notcontains '::/0') { throw 'Require AllowedIPs = 0.0.0.0/0, ::/0 for the full-tunnel guard.' }
     if ($values['DNS'] -ne '10.77.0.1') { throw 'Require gateway DNS 10.77.0.1.' }
     if ($values['Address'] -notmatch '^10\.77\.0\.(\d{1,3})/32$') { throw 'Require an assigned client /32 address.' }
     $number = [int]$Matches[1]
