@@ -3,7 +3,9 @@
 # Kurukshetra-Ops Setup Script
 # Automates pre-deployment configuration and permissions
 
-set -e
+set -euo pipefail
+PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
 
 echo "=========================================="
 echo "Kurukshetra-Ops Setup Script"
@@ -34,7 +36,6 @@ echo ""
 # Create directories if they don't exist
 mkdir -p data/es_data
 mkdir -p data/pihole
-mkdir -p data/vscode
 mkdir -p logs/nginx
 mkdir -p logs/pihole
 mkdir -p certs
@@ -66,9 +67,6 @@ echo "  - Setting Pi-hole data directory permissions..."
 mkdir -p data/pihole
 chmod 755 data/pihole/
 
-echo "  - Setting VS Code data directory permissions..."
-mkdir -p data/vscode
-chmod 755 data/vscode/
 
 echo "✓ Permissions fixed successfully"
 echo ""
@@ -78,7 +76,6 @@ echo "Step 2: Checking docker-compose.yml for required configurations..."
 echo ""
 
 CONFIG_CHECKS=(
-    "FTLCONF_webserver_api_password=password"
     "xpack.security.encryptionKey=something_at_least_32"
 )
 
@@ -94,8 +91,8 @@ if [ "$NEEDS_CONFIG" = true ]; then
     echo ""
     echo "⚠️  Action Required:"
     echo "   Edit docker-compose.yml and change:"
-    echo "   - FTLCONF_webserver_api_password (change from 'password')"
-    echo "   - FTLCONF_dns_hosts (update with your IPs/hostnames)"
+    echo "   - PIHOLE_API_PASSWORD in private .env (never in Compose)"
+    echo "   - PIHOLE_LAN_IP in private .env (configure with ./deploy.sh --configure-only)"
     echo "   - xpack.* encryption keys (use random 32+ char strings)"
     echo ""
     read -p "Continue without editing? (y/n) " -n 1 -r
@@ -116,12 +113,12 @@ echo "=========================================="
 echo ""
 echo "Next steps:"
 echo "1. Verify docker-compose.yml settings"
-echo "2. Run: docker compose up -d"
-echo "3. Monitor startup: docker compose logs -f"
+echo "2. Configure private .env: ./deploy.sh --configure-only"
+echo "3. Start selected profiles using docs/OPERATIONS.md; setup does not start services"
 echo ""
 echo "Services will be available at:"
 echo "  - Nginx:      https://localhost"
-echo "  - Pi-hole:    http://localhost/admin"
-echo "  - Kibana:     http://localhost:5601"
-echo "  - Elasticsearch: http://localhost:9200"
+echo "  - Pi-hole:    https://localhost/admin (with gateway profile)"
+echo "  - Kibana:     optional monitoring profile"
+echo "  - Elasticsearch: optional monitoring profile"
 echo ""
