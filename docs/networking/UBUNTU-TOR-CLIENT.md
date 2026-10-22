@@ -59,3 +59,7 @@ Trial expiry still deliberately restores ordinary direct Internet, as do disconn
 ## Post-dashboard Ubuntu recheck
 
 Read-only checks during an operator-started trial confirmed official HTTPS Tor verification, DNS on torwg0, Internet destination routing through the tunnel policy table, IPv6 request timeout, and continuing host-only SSH. The installed controller differs from the current repository source; these observations do not validate installing the latest downloadable client. No timer was confirmed or cancelled, no gateway outage was induced, and Windows/snapshots were untouched. Complete current-source rollout and its controlled verification before claiming the public installer fully verified.
+
+## Desktop browser integration in source
+
+Download open-tor-browser.sh beside the controller and trial scripts before setup. Setup installs a public executable browser helper separately from private configuration. Local desktop Connect attempts Chrome, Chromium or Edge as the original non-root user, using a separate profile and tunnel SOCKS DNS. SSH, headless servers and unsupported browser installations skip GUI launch. The browser action can be run separately as the desktop user. No root browser, default-profile edits or global proxy changes are used. Ubuntu VM remains reverted/suspended; this source addition has not been guest-deployed.

@@ -7,7 +7,7 @@ import tempfile
 root = Path(__file__).resolve().parents[2]
 source = root / 'scripts/tor-client'
 target = root / 'config/nginx/www/client'
-files = {'ubuntu': ['tor-client.sh', 'trial.sh', 'local.env.example'], 'windows': ['windows-tor.ps1', 'open-tor-chrome.ps1']}
+files = {'ubuntu': ['tor-client.sh', 'trial.sh', 'open-tor-browser.sh', 'local.env.example'], 'windows': ['windows-tor.ps1', 'open-tor-browser.ps1']}
 def publish(path, content):
     if path.is_symlink():
         raise SystemExit('Refusing symlink in generated download tree')
@@ -30,7 +30,7 @@ for platform, names in files.items():
         publish(target / platform / name, data)
         manifest.append(hashlib.sha256(data).hexdigest() + '  ' + platform + '/' + name)
 publish(target / 'SHA256SUMS', ('\n'.join(manifest)+'\n').encode())
-for name in ('tor-client.sh','trial.sh','windows-tor.ps1'):
+for name in ('tor-client.sh','trial.sh','windows-tor.ps1','windows/open-tor-chrome.ps1'):
     legacy = target / name
     if legacy.is_file() or legacy.is_symlink(): legacy.unlink()
 print('Published allowlisted Ubuntu and Windows downloads with SHA256 manifest')

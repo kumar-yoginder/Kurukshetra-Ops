@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('Install','Connect','Status','Check','Disconnect')][string]$Action,
+    [ValidateSet('Install','Connect','Status','Check','Disconnect','Browser','Update')][string]$Action,
     [string]$ConfigPath
 )
 $ErrorActionPreference = 'Stop'
@@ -16,6 +16,20 @@ $wireguard = Join-Path $env:ProgramFiles 'WireGuard\wireguard.exe'
 $directory = Join-Path $env:ProgramData 'KurukshetraTor'
 $peerFile = Join-Path $directory 'kurukshetra-tor.conf'
 $serviceName = 'WireGuardTunnel$kurukshetra-tor'
+function Copy-ClientTools {
+    $helper = Join-Path $PSScriptRoot 'open-tor-browser.ps1'
+    if (-not (Test-Path -LiteralPath $helper)) { throw 'Download open-tor-browser.ps1 beside windows-tor.ps1 first.' }
+    $target = Join-Path $directory 'windows-tor.ps1'
+    if ($PSCommandPath -ine $target) { Copy-Item -LiteralPath $PSCommandPath -Destination $target -Force }
+    $target = Join-Path $directory 'open-tor-browser.ps1'
+    if ($helper -ine $target) { Copy-Item -LiteralPath $helper -Destination $target -Force }
+}
+function Open-ManagedBrowser {
+    $helper = Join-Path $directory 'open-tor-browser.ps1'
+    if ($identity.IsSystem -or $env:SSH_CONNECTION) { Write-Output 'Headless/remote session: run the Browser action locally when ready.'; return }
+    if (-not (Test-Path -LiteralPath $helper)) { Write-Warning 'Browser helper missing; run Update with both downloaded scripts.'; return }
+    try { & $helper } catch { Write-Warning ('Tunnel remains connected; browser launch failed: ' + $_.Exception.Message) }
+}
 function Invoke-TunnelCommand([string]$Operation, [string]$Value) {
     # WireGuard is a GUI-subsystem executable; explicitly wait for CLI completion.
     $process = Start-Process -FilePath $wireguard -ArgumentList @('/' + $Operation, ('"' + $Value + '"')) -Wait -PassThru
@@ -52,6 +66,7 @@ switch ($Action) {
         if (-not (Test-Path -LiteralPath $wireguard)) { throw 'Install official WireGuard for Windows first.' }
         if (-not $ConfigPath -or -not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) { throw 'Supply -ConfigPath to your private peer configuration.' }
         if (Test-Path -LiteralPath $directory) { throw 'Existing private installation: review it instead of overwriting.' }
+        if (-not (Test-Path (Join-Path $PSScriptRoot 'open-tor-browser.ps1'))) { throw 'Download the browser helper beside this script first.' }
         Validate-Peer $ConfigPath
         New-Item -ItemType Directory -Path $directory | Out-Null
         $acl = New-Object Security.AccessControl.DirectorySecurity
@@ -63,6 +78,7 @@ switch ($Action) {
         }
         Set-Acl -LiteralPath $directory -AclObject $acl
         Copy-Item -LiteralPath $ConfigPath -Destination $peerFile
+        Copy-ClientTools
         Write-Output 'Private configuration installed. Networking unchanged. Connect separately from the VM console.'
     }
     'Connect' {
@@ -79,6 +95,16 @@ switch ($Action) {
             throw $failure
         }
         Write-Output 'Tunnel running with manual startup. Run Check. Local network access may be blocked; keep the VM console available.'
+        Open-ManagedBrowser
+    }
+    'Update' {
+        Validate-Peer $peerFile
+        Copy-ClientTools
+        Write-Output 'Controller and browser helper updated; private profile and networking unchanged.'
+    }
+    'Browser' {
+        if ((Get-Service -Name $serviceName).Status -ne 'Running') { throw 'Connect the managed tunnel first.' }
+        Open-ManagedBrowser
     }
     'Status' {
         $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue

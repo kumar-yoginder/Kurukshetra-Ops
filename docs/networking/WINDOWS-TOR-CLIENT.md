@@ -40,4 +40,14 @@ Current state after testing: disconnected, ordinary networking restored. This do
 
 The gateway itself retrieved the official Tor blog onion with HTTP 200 and resolved its virtual DNS mapping. Stock curl rejected direct onion resolution even with a supplied address; that was an unsuitable client test. Use `curl.exe --socks5-hostname 10.77.0.1:9050` while connected. The Tor SOCKS listener on the tunnel address is accepted only from wg0; Docker still publishes only WireGuard UDP. The local probe SOCKS listener remains loopback-only.
 
-`windows/open-tor-chrome.ps1` opens a separate Chrome profile with SOCKS5, proxy-side DNS and QUIC disabled. It does not alter the system proxy or provide Tor Browser fingerprint protections. Download it before connecting because local gateway HTTPS is intentionally unavailable under the full-tunnel policy. End-to-end Windows onion/browser verification is pending. [Chromium proxy documentation](https://chromium.googlesource.com/chromium/src/net/+/show/HEAD/docs/proxy.md).
+`windows/open-tor-browser.ps1` opens a separate Chrome profile with SOCKS5, proxy-side DNS and QUIC disabled. It does not alter the system proxy or provide Tor Browser fingerprint protections. Download it before connecting because local gateway HTTPS is intentionally unavailable under the full-tunnel policy. End-to-end Windows onion/browser verification is pending. [Chromium proxy documentation](https://chromium.googlesource.com/chromium/src/net/+/show/HEAD/docs/proxy.md).
+
+## Automatic installed-browser integration
+
+Download windows-tor.ps1 and open-tor-browser.ps1 together. Install now saves both under the private ProgramData directory; existing installations use Action Update to refresh only code, preserving peer configuration and network state. Connect from the local desktop attempts an installed Chrome, Edge or Chromium using a separate Tor browser profile; it does not edit the normal profile or Windows global proxy. Browser explicitly opens the same helper. SYSTEM/SSH sessions skip automatic GUI launch. If no supported browser is present, report that condition without installing anything.
+
+The operator confirmed onion access using the SOCKS5 Chrome command. This confirms that path, not Tor Browser fingerprint protections. RemoteSigned was authorized only for temporary processes; saved policy remains unchanged.
+
+## Automatic browser desktop trial
+
+The updated controller and browser helper were installed without changing peer settings. A local interactive-user scheduled trial reported connected=true, browser_started=true, tor_verified=true, disconnected=true, error=null. The VM screen showed the official onion blog loaded in the launched Chrome window. Both temporary trial/recovery tasks were removed; Windows was left disconnected. Chrome displayed its warning about the advanced host-resolver-rules flag; no warning was suppressed. The source and downloads retain that explicit proxy-side DNS configuration.
