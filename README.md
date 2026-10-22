@@ -459,7 +459,7 @@ Ethernet remains the permanent Pi link. An optional Wi-Fi recovery monitor is
 being prepared to provide local SSH access through Wi-Fi when Ethernet loses
 its link or repeatedly cannot reach the router. See
 transparent failover for services bound to the Ethernet address; the recovery
-service is not installed or enabled yet.
+service is installed and enabled at boot after the accepted trial.
 
 ## Review plans
 

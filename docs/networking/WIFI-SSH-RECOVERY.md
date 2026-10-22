@@ -2,7 +2,7 @@
 
 ## Purpose and current state
 
-Ethernet is the permanent Pi connection. Wi-Fi is an emergency local maintenance path with its own address; it is not transparent failover for Pi-hole, HTTPS or Tor services bound to the Ethernet address. The monitor is prepared for a reversible trial, not installed or enabled persistently.
+Ethernet is the permanent Pi connection. Wi-Fi is an emergency local maintenance path with its own address; it is not transparent failover for Pi-hole, HTTPS or Tor services bound to the Ethernet address. The monitor is installed, running, and enabled at boot following the accepted trial.
 
 The monitor uses systemd-networkd's existing Wi-Fi configuration and saved credentials. It never reads, copies or versions the Wi-Fi password. It does not restart the network manager or disable Ethernet.
 
