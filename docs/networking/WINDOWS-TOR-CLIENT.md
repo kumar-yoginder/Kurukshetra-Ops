@@ -23,3 +23,7 @@ References: [official service commands](https://git.zx2c4.com/wireguard-windows/
 ## Windows prerequisite checkpoint
 
 Operator restored the selected existing snapshot and authorized Mac SSH access locally. Administrator SSH works. Official WireGuard ARM64 1.1.1 was installed after Authenticode status and publisher verification. PowerShell parser passed. Runtime validator testing found a culture-dependent route-sort comparison; membership checks now accept the intended full-tunnel profile and reject split routes. No private peer or active tunnel has been installed. Guest main adapter still needed reachability to the Pi at this checkpoint; host-only management remains separate.
+
+## Peer preparation checkpoint
+
+Windows now reaches the Pi after returning to home-LAN DHCP. A new private Windows key and profile were generated inside an Administrators/SYSTEM-only staging directory. Script installation was blocked by the existing PowerShell execution policy; no policy override or tunnel connection was performed. Only the public key was transferred to ignored Pi registration input. Persistent registration requires operator sudo via `sudo python3 scripts/tor-gateway/register-peer.py config/tor-gateway/private/windows-peer.json`. The helper validates unique assignment and updates runtime and root-owned configuration without restarting the gateway. No connection tests are complete yet.
