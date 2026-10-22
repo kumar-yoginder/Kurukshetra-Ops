@@ -1,4 +1,18 @@
+# Current operations
+
+See [operations](docs/OPERATIONS.md) for startup commands, image versions and layout.
+
 # Kurukshetra-Ops
+
+## Host security and implementation plans
+
+Host hardening tools live in `scripts/host-hardening/`, examples in
+`config/host-hardening/`, and usage/recovery instructions in
+[Host hardening](docs/security/HOST-HARDENING.md). Actual site settings, firewall
+rules and audit reports remain ignored. Review the guide before running any
+privileged script; deployment does not automatically apply host hardening.
+
+It is planning only; Ubuntu Server on VMware Fusion is the agreed first test client.
 
 ## Automatic network configuration
 
@@ -214,8 +228,8 @@ Divine command operations orchestration platform. A complete ops stack for manag
 Kurukshetra-Ops/
 ├── docker-compose.yml          # Service definitions & orchestration
 ├── dns-toggle.sh               # DNS management utility
-├── instruction.md              # Security & operations guidelines
-├── readme.md                   # This file
+├── docs/REPOSITORY-HYGIENE.md              # Security & operations guidelines
+├── README.md                   # This file
 ├── .gitignore                  # VCS ignore rules (keys, secrets, data)
 ├── certs/                      # TLS certificates (auto-generated, not committed)
 ├── config/                     # Service configurations
@@ -371,7 +385,7 @@ docker compose exec elasticsearch sh
 
 ## 📚 Documentation
 
-- **[instruction.md](instruction.md)** — Complete security, hygiene, and operations guidelines
+- **[docs/REPOSITORY-HYGIENE.md](docs/REPOSITORY-HYGIENE.md)** — Complete security, hygiene, and operations guidelines
 - **[docker-compose.yml](docker-compose.yml)** — Service configurations and deployment specs
 - **[dns-toggle.sh](dns-toggle.sh)** — DNS management utility
 - **[setup.sh](setup.sh)** — Automated pre-deployment setup script
@@ -382,7 +396,7 @@ docker compose exec elasticsearch sh
 1. Never commit secrets, keys, or `.env`
 2. Keep runtime data on local systems only
 3. Test changes with `docker compose up` before committing
-4. Follow guidelines in [instruction.md](instruction.md)
+4. Follow guidelines in [docs/REPOSITORY-HYGIENE.md](docs/REPOSITORY-HYGIENE.md)
 
 ## � Troubleshooting
 
@@ -445,3 +459,23 @@ The existing `./data/pihole` volume preserves the database across recreation.
 The startup wrapper changes Pi-hole's built-in Gravity cron job to daily at
 03:47 Asia/Kolkata and retains its other jobs. No host cron job is needed.
 `docker compose up -d` applies this configuration on the next recreation.
+
+## Optional Tor gateway prototype
+
+The gateway is an explicit overlay, separate from the default services. See
+[the Tor gateway guide](docs/networking/TOR-GATEWAY.md) and the implementation
+plan for its current validation state. Do not attach privacy-sensitive clients
+before guest egress restrictions and failure tests pass.
+
+## Emergency Wi-Fi maintenance path
+
+Ethernet remains the permanent Pi link. An optional Wi-Fi recovery monitor is
+being prepared to provide local SSH access through Wi-Fi when Ethernet loses
+its link or repeatedly cannot reach the router. See
+transparent failover for services bound to the Ethernet address; the recovery
+service is not installed or enabled yet.
+
+## Review plans
+
+
+These are reviewed proposals and inventories, not evidence of file/network removal.

@@ -1,0 +1,9 @@
+# Example only. Create private wg0.conf locally with chmod 600.
+# Native wg setconf format: no Address, DNS, PostUp or shell hooks.
+[Interface]
+PrivateKey = REPLACE_WITH_SERVER_PRIVATE_KEY
+ListenPort = 51820
+
+[Peer]
+PublicKey = REPLACE_WITH_UBUNTU_PUBLIC_KEY
+AllowedIPs = 10.77.0.2/32

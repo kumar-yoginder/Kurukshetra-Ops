@@ -1,0 +1,8 @@
+{
+  "ethernet": "eth0",
+  "wifi": "wlan0",
+  "router_ipv4": "192.0.2.1",
+  "interval_seconds": 5,
+  "failure_samples": 3,
+  "recovery_samples": 12
+}

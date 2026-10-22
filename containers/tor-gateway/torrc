@@ -1,0 +1,17 @@
+# Client gateway only; no relay, exit or public SOCKS listener.
+ClientOnly 1
+SocksPort 0
+ORPort 0
+User debian-tor
+DataDirectory /var/lib/tor
+Log notice stdout
+SafeLogging 1
+TransPort 10.77.0.1:9040 IsolateClientAddr
+DNSPort 10.77.0.1:5353 IsolateClientAddr
+VirtualAddrNetworkIPv4 10.192.0.0/10
+AutomapHostsOnResolve 1
+AutomapHostsSuffixes .onion
+ClientRejectInternalAddresses 1
+ControlPort 127.0.0.1:9051
+CookieAuthentication 1
+CookieAuthFile /var/lib/tor/control_auth_cookie

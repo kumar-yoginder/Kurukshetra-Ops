@@ -50,3 +50,12 @@
 - Ensure `.gitignore` is accurate and covers all sensitive paths
 - Use `cert-gen` service in `docker-compose.yml` to generate certs locally; never commit produced private keys.
 - Follow the local setup commands for directory initialization.
+
+## Host hardening maintenance
+
+See `docs/security/HOST-HARDENING.md` before changing or applying host utilities.
+Keep actual `config/host-hardening/local.env`, `lan-hardening.nft`, and all
+`backups/host-hardening/` reports out of Git. Version only example settings and
+reviewed scripts. File organization must not execute privileged hardening or
+change active networking. Keep existing rollback safeguards and verify fresh
+SSH connections before confirming any hardening trial.

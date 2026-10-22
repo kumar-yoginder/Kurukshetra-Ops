@@ -17,7 +17,7 @@ services:
       - >
         apk add --no-cache openssl &&
 
-        printf '%s\n' '[v3_server]' 'subjectAltName=DNS:dwarka.gateway,IP:192.168.31.215' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature,keyEncipherment' 'extendedKeyUsage=serverAuth' > /certs/server-ext.cnf &&
+        printf '%s\n' '[v3_server]' 'subjectAltName=DNS:dwarka.gateway,IP:${PIHOLE_LAN_IP:?Set PIHOLE_LAN_IP in private .env}' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature,keyEncipherment' 'extendedKeyUsage=serverAuth' > /certs/server-ext.cnf &&
 
         if [ ! -f /certs/ca.crt ]; then
           openssl genrsa -out /certs/ca.key 4096 &&
@@ -54,7 +54,7 @@ services:
       - TZ=Asia/Kolkata
       # The host systemd-timesyncd service manages the shared system clock.
       - FTLCONF_ntp_sync_active=false
-      - FTLCONF_webserver_api_password=password
+      - FTLCONF_webserver_api_password=${PIHOLE_API_PASSWORD:?Set PIHOLE_API_PASSWORD in private .env}
       - FTLCONF_dns_listeningMode=ALL
       - FTLCONF_dns_hosts=${PIHOLE_LAN_IP:?Run ./deploy.sh --configure-only first} dwarka.gateway kurukshetra.lan;${ADDITIONAL_DNS_HOSTS:-}
       - INTERFACE=eth0
@@ -149,7 +149,9 @@ services:
     restart: unless-stopped
   nginx:
     profiles: [gateway]
-    image: nginx:stable-alpine
+    build:
+      context: ./containers/nginx
+    image: kurukshetra/nginx-gateway:2026.10.23
     container_name: kurukshetra-gateway
     ports:
       - 80:80

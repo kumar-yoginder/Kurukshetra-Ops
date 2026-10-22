@@ -1,0 +1,50 @@
+# Explicit opt-in overlay; normal Compose deployment does not include this file.
+services:
+  tor-gateway:
+    profiles: [tor]
+    build:
+      context: ./containers/tor-gateway
+    image: kurukshetra/tor-gateway:2026.10.23
+    restart: unless-stopped
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, SETUID, SETGID, CHOWN, FOWNER]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+      - /run:rw,noexec,nosuid,size=8m
+    sysctls:
+      net.ipv4.ip_forward: "0"
+      net.ipv6.conf.all.disable_ipv6: "1"
+      net.ipv6.conf.default.disable_ipv6: "1"
+    ports:
+      # Safe default: loopback only. Set TOR_BIND_IP in ignored .env after review.
+      - "${TOR_BIND_IP:-127.0.0.1}:51820:51820/udp"
+    volumes:
+      - type: bind
+        source: ./config/tor-gateway/wg0.conf
+        target: /run/wireguard/wg0.conf
+        read_only: true
+        bind:
+          create_host_path: false
+      - tor-gateway-state:/var/lib/tor
+    networks: [tor-egress]
+    healthcheck:
+      test: [CMD, /usr/local/bin/healthcheck.py]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    mem_limit: 384m
+    cpus: 1.0
+    pids_limit: 96
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+networks:
+  tor-egress:
+    driver: bridge
+volumes:
+  tor-gateway-state:

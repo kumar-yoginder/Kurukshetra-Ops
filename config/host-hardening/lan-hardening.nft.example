@@ -1,0 +1,32 @@
+# Dedicated table: never flush Docker/UFW tables.
+# EXAMPLE ONLY: replace documentation addresses before use; keep real rules in ignored lan-hardening.nft.
+table inet pi_lan_guard {
+  chain input {
+    type filter hook input priority -10; policy accept;
+    iifname { "eth0", "wlan0" } jump inbound
+  }
+  chain inbound {
+    ct state established,related accept
+    ct state invalid drop
+    meta l4proto ipv6-icmp accept
+    ip protocol icmp accept
+    udp sport 67 udp dport 68 accept
+    ip6 saddr fe80::/10 udp sport 547 udp dport 546 accept
+    ip saddr 192.0.2.0/24 tcp dport { 22, 53, 80, 443 } accept
+    ip saddr 192.0.2.0/24 udp dport 53 accept
+    ip6 saddr { 2001:db8:1234::/64, fe80::/10 } tcp dport { 22, 53, 80, 443 } accept
+    ip6 saddr { 2001:db8:1234::/64, fe80::/10 } udp dport 53 accept
+    counter drop
+  }
+  chain forward {
+    type filter hook forward priority -10; policy accept;
+    iifname { "eth0", "wlan0" } jump forwarded_inbound
+  }
+  chain forwarded_inbound {
+    ct state established,related accept
+    ct state invalid drop
+    ip saddr 192.0.2.0/24 accept
+    ip6 saddr { 2001:db8:1234::/64, fe80::/10 } accept
+    counter drop
+  }
+}

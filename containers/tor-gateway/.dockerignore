@@ -1,0 +1,6 @@
+*
+!Dockerfile
+!torrc
+!firewall.nft.in
+!entrypoint.sh
+!healthcheck.py

@@ -42,3 +42,20 @@ backups/
 # Generated gateway certificates and local recovery copies
 /certs/
 /docker-compose.yml.before-*
+
+# Private host-hardening settings and site firewall rules
+/config/host-hardening/local.env
+/config/host-hardening/lan-hardening.nft
+/hardening-audit*.txt
+
+# Tor gateway peer secrets, exports and runtime state
+/config/tor-gateway/wg0.conf
+/config/tor-gateway/private/
+/config/tor-gateway/clients/
+
+# Private Ethernet/Wi-Fi recovery settings
+/config/network-recovery/recovery.json
+
+# Implementation plans remain local
+/docs/plans/
+**/*-PLAN.md
