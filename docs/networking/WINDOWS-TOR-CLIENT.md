@@ -1,6 +1,6 @@
 # Windows Tor client prototype
 
-The PowerShell parser and profile-validator logic were exercised on the restored Windows 11 ARM64 VM. Full tunnel installation and egress/leak tests remain pending. Ubuntu trial results do not establish Windows leak protection. Keep the Fusion console available before testing; full-tunnel firewall rules can block remote administration.
+The PowerShell parser and profile-validator logic were exercised on the restored Windows 11 ARM64 VM. A bounded manual-session trial subsequently passed Tor HTTPS verification, tunnel DNS, routing, an IPv6 connection block, and automatic disconnect. Broader outage/leak/reboot tests remain pending. Ubuntu trial results do not establish Windows leak protection. Keep the Fusion console available before testing; full-tunnel firewall rules can block remote administration.
 
 Install official WireGuard for Windows and trust the local gateway CA. Review `scripts/tor-client/windows/windows-tor.ps1` and respect local PowerShell policy. Provision a unique private Windows profile with Address in the assigned tunnel range as /32, gateway DNS, one peer, and AllowedIPs containing both IPv4 and IPv6 default routes. Server AllowedIPs must match that client /32. Never publish keys or reuse another device private key.
 
@@ -27,3 +27,11 @@ Operator restored the selected existing snapshot and authorized Mac SSH access l
 ## Peer preparation checkpoint
 
 Windows now reaches the Pi after returning to home-LAN DHCP. A new private Windows key and profile were generated inside an Administrators/SYSTEM-only staging directory. Script installation was blocked by the existing PowerShell execution policy; no policy override or tunnel connection was performed. Only the public key was transferred to ignored Pi registration input. Persistent registration requires operator sudo via `sudo python3 scripts/tor-gateway/register-peer.py config/tor-gateway/private/windows-peer.json`. The helper validates unique assignment and updates runtime and root-owned configuration without restarting the gateway. No connection tests are complete yet.
+
+## Corrected live manual-session trial
+
+The first trial exposed a command-completion race: the controller invoked the WireGuard GUI-subsystem executable without explicitly waiting before inspecting exit status. The controller now uses Start-Process with Wait and PassThru for installation/removal. A second local SYSTEM task reported connected=true, tor_verified=true, dns_configured=true, dns_resolved=true, tunnel_route=true, direct_ipv6_connected=false, disconnected=true, and no runtime or cleanup error. SSH returned after disconnect. Temporary test and recovery tasks were removed, the user-facing controller was updated, and saved PowerShell execution-policy scopes remained unchanged.
+
+Current state after testing: disconnected, ordinary networking restored. This does not establish gateway-outage behavior, comprehensive DNS leak resistance, or reboot privacy. A reusable local test body is retained as windows/test-session.ps1; it expects the protected controller under ProgramData and must only be run with independently armed recovery.
+
+[Microsoft process-wait behavior](https://devblogs.microsoft.com/powershell/managing-processes-in-powershell/).

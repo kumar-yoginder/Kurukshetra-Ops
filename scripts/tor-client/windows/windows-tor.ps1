@@ -16,6 +16,11 @@ $wireguard = Join-Path $env:ProgramFiles 'WireGuard\wireguard.exe'
 $directory = Join-Path $env:ProgramData 'KurukshetraTor'
 $peerFile = Join-Path $directory 'kurukshetra-tor.conf'
 $serviceName = 'WireGuardTunnel$kurukshetra-tor'
+function Invoke-TunnelCommand([string]$Operation, [string]$Value) {
+    # WireGuard is a GUI-subsystem executable; explicitly wait for CLI completion.
+    $process = Start-Process -FilePath $wireguard -ArgumentList @('/' + $Operation, ('"' + $Value + '"')) -Wait -PassThru
+    if ($process.ExitCode -ne 0) { throw ('WireGuard command failed: ' + $Operation + ' exit ' + $process.ExitCode) }
+}
 function Validate-Peer([string]$Path) {
     $content = Get-Content -LiteralPath $Path -Raw
     if ([regex]::Matches($content, '(?im)^\s*\[Peer\]\s*$').Count -ne 1 -or
@@ -64,14 +69,14 @@ switch ($Action) {
         if (-not (Test-Path -LiteralPath $wireguard)) { throw 'Official WireGuard is not installed.' }
         Validate-Peer $peerFile
         if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw 'A managed tunnel already exists; inspect Status first.' }
-        & $wireguard /installtunnelservice $peerFile
-        if ($LASTEXITCODE -ne 0) { throw 'WireGuard tunnel installation failed.' }
+        Invoke-TunnelCommand 'installtunnelservice' $peerFile
         try {
             Set-Service -Name $serviceName -StartupType Manual
             (Get-Service -Name $serviceName).WaitForStatus('Running',[TimeSpan]::FromSeconds(15))
         } catch {
-            & $wireguard /uninstalltunnelservice 'kurukshetra-tor'
-            throw
+            $failure = $_
+            try { Invoke-TunnelCommand 'uninstalltunnelservice' 'kurukshetra-tor' } catch { Write-Warning 'Automatic cleanup failed; use Disconnect locally.' }
+            throw $failure
         }
         Write-Output 'Tunnel running with manual startup. Run Check. Local network access may be blocked; keep the VM console available.'
     }
@@ -89,8 +94,7 @@ switch ($Action) {
     'Disconnect' {
         if (-not (Test-Path -LiteralPath $wireguard)) { throw 'Official WireGuard is not installed.' }
         if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-            & $wireguard /uninstalltunnelservice 'kurukshetra-tor'
-            if ($LASTEXITCODE -ne 0) { throw 'Tunnel removal failed; inspect locally.' }
+            Invoke-TunnelCommand 'uninstalltunnelservice' 'kurukshetra-tor'
         }
         Write-Output 'Managed tunnel removed. Ordinary networking is restored; private profile retained.'
     }
