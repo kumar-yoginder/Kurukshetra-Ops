@@ -11,7 +11,7 @@ Validated on Ubuntu Server 24.04 ARM64. These scripts are not a Windows or unive
 
 ## Tested Ubuntu instance
 
-The client command is installed. The test session was disconnected deliberately after checks; ordinary Internet routing is currently restored.
+The client command is installed. Session state is operator-controlled; use status and the rollback timer to determine whether a trial is currently active.
 
 ```bash
 sudo kurukshetra-tor connect
@@ -55,3 +55,7 @@ The repository source now supports unique client tunnel addresses and serializes
 The installed Ubuntu client remains the previously tested first-peer version until explicitly updated. Do not describe repository changes as installed or live-tested. Existing sessions should be disconnected with their existing installed rollback before upgrading; keep the Fusion console available. New source requires `flock` (provided by Ubuntu's util-linux).
 
 Trial expiry still deliberately restores ordinary direct Internet, as do disconnect and reboot. A confirmed session is not boot-persistent.
+
+## Post-dashboard Ubuntu recheck
+
+Read-only checks during an operator-started trial confirmed official HTTPS Tor verification, DNS on torwg0, Internet destination routing through the tunnel policy table, IPv6 request timeout, and continuing host-only SSH. The installed controller differs from the current repository source; these observations do not validate installing the latest downloadable client. No timer was confirmed or cancelled, no gateway outage was induced, and Windows/snapshots were untouched. Complete current-source rollout and its controlled verification before claiming the public installer fully verified.
