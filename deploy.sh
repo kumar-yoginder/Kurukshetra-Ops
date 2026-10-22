@@ -1,48 +1,56 @@
 #!/usr/bin/env bash
+# Pi-side entry point. Does not manage host networking or guest clients.
 set -euo pipefail
 PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
-# An exported PIHOLE_LAN_IP overrides discovery. NETWORK_INTERFACE selects a NIC.
-python3 - <<'PYNET'
-import ipaddress,json,os,re,subprocess
-from pathlib import Path
-def ip(*args):
-    return json.loads(subprocess.check_output(["ip","-j",*args],text=True))
-address=os.environ.get("PIHOLE_LAN_IP","")
-if not address:
-    interface=os.environ.get("NETWORK_INTERFACE","")
-    if not interface:
-        routes=[r for r in ip("-4","route","show","default") if r.get("dev")]
-        if not routes:
-            raise SystemExit("No IPv4 default route: set NETWORK_INTERFACE or PIHOLE_LAN_IP.")
-        interface=min(routes,key=lambda r:r.get("metric",0))["dev"]
-    addresses=[a["local"] for item in ip("-4","addr","show","dev",interface)
-               for a in item.get("addr_info",[]) if a.get("scope")=="global"]
-    if len(addresses)!=1:
-        raise SystemExit("Expected one IPv4 address on "+interface+"; set PIHOLE_LAN_IP explicitly.")
-    address=addresses[0]
-v=ipaddress.ip_address(address)
-if v.version!=4 or v.is_loopback or v.is_unspecified or v.is_multicast or v.is_link_local:
-    raise SystemExit("PIHOLE_LAN_IP must be a usable LAN IPv4 address.")
-p=Path(".env")
-s=p.read_text() if p.exists() else ""
-line="PIHOLE_LAN_IP="+address
-if re.search(r"^PIHOLE_LAN_IP=.*$",s,re.M):
-    s=re.sub(r"^PIHOLE_LAN_IP=.*$",line,s,flags=re.M)
-else:
-    s=s.rstrip()+"\n"+line+"\n"
-temporary=Path(".env.network-tmp")
-fd=os.open(temporary,os.O_WRONLY|os.O_CREAT|os.O_TRUNC,0o600)
-with os.fdopen(fd,"w") as f:
-    f.write(s)
-os.replace(temporary,p)
-print("Pi-hole LAN address:",address)
-PYNET
-docker compose config --quiet
-if [[ "${1:-}" == "--configure-only" ]]; then
-    exit 0
+usage() {
+    cat <<'HELP'
+Usage: ./deploy.sh [--gateway] [--tor] [--prepare] [COMPOSE COMMAND...]
+Default: Pi-hole only, up -d. --tor includes the Tor overlay and profile.
+--gateway enables HTTPS gateway and certificate services.
+--prepare creates missing runtime mount paths without changing existing ownership.
+--configure-only validates configuration without starting services.
+Examples:
+  ./deploy.sh --gateway --tor config --quiet
+  ./deploy.sh --gateway --tor up -d --build
+  ./deploy.sh --gateway --tor ps
+  ./deploy.sh --gateway --tor logs --tail 50
+Private .env must contain PIHOLE_LAN_IP and PIHOLE_API_PASSWORD.
+HELP
+}
+compose=(docker compose -f docker-compose.yml)
+profiles=()
+prepare=false
+validate_only=false
+tor=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --gateway) profiles+=(--profile gateway); shift ;;
+        --tor) tor=true; profiles+=(--profile tor); shift ;;
+        --prepare) prepare=true; shift ;;
+        --configure-only) validate_only=true; shift ;;
+        --help|-h) usage; exit 0 ;;
+        *) break ;;
+    esac
+done
+if "$tor"; then compose+=(-f docker-compose.tor.yml); fi
+compose+=("${profiles[@]}")
+# Compose validates required variables without printing their values.
+"${compose[@]}" config --quiet
+if "$tor" && [[ ! -f config/tor-gateway/wg0.conf ]]; then
+    echo "Missing private config/tor-gateway/wg0.conf; provision the gateway first." >&2
+    exit 1
 fi
-if [[ $# -eq 0 ]]; then
-    set -- up -d
+if "$prepare"; then
+    mkdir -p data/pihole logs/pihole logs/nginx certs
+    if [[ -d logs/pihole/pihole.log ]]; then
+        echo "logs/pihole/pihole.log must be a file, not a directory." >&2
+        exit 1
+    fi
+    if [[ ! -e logs/pihole/pihole.log ]]; then
+        (umask 022; touch logs/pihole/pihole.log)
+    fi
 fi
-exec docker compose "$@"
+if "$validate_only"; then exit 0; fi
+if [[ $# -eq 0 ]]; then set -- up -d; fi
+exec "${compose[@]}" "$@"

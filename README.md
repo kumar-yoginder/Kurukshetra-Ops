@@ -12,33 +12,19 @@ Host hardening tools live in `scripts/host-hardening/`, examples in
 rules and audit reports remain ignored. Review the guide before running any
 privileged script; deployment does not automatically apply host hardening.
 
-It is planning only; Ubuntu Server on VMware Fusion is the agreed first test client.
+The Tor gateway is deployed; Ubuntu Server on VMware Fusion was the first test client. See the networking guides for supported commands and remaining validation limits.
 
-## Automatic network configuration
+## Deployment configuration
 
-Use `./deploy.sh` instead of `docker compose up -d` to detect the host IPv4
-address before startup. It chooses the interface on the lowest-metric default
-route, saves PIHOLE_LAN_IP in the ignored .env file, validates Compose, then
-forwards your arguments to Docker Compose.
+Keep the stable Ethernet address and password in ignored `.env` as `PIHOLE_LAN_IP` and `PIHOLE_API_PASSWORD`. Deployment validates existing configuration; it never discovers or rewrites addresses. Tor additionally needs its private WireGuard configuration and an appropriate `TOR_BIND_IP`.
 
 ```sh
-./deploy.sh                              # detect address, start Pi-hole
-./deploy.sh --profile gateway up -d       # include HTTPS gateway
-./deploy.sh --profile monitoring up -d    # include monitoring
-./deploy.sh --configure-only             # update .env without restarting
-NETWORK_INTERFACE=eth0 ./deploy.sh        # choose an interface
-PIHOLE_LAN_IP=192.168.1.10 ./deploy.sh     # explicit address override example
+./deploy.sh --gateway --tor --prepare --configure-only
+./deploy.sh --gateway --tor up -d --build
+./deploy.sh --gateway --tor ps
 ```
 
-ADDITIONAL_DNS_HOSTS in .env holds other machines' address/name entries.
-Those cannot be discovered reliably from this host. RECOVERY_DNS can override
-the public resolver used by dns-toggle.sh recovery. The Nginx resolver
-127.0.0.11 is Docker's internal resolver and must not be replaced by the LAN IP.
-
-Reserve Pi-hole's address in the router's DHCP settings. Auto-discovery updates
-Pi-hole's local hostname entry; it does not update DNS addresses advertised by
-your router or discover address changes continuously. Run deploy.sh again after
-a network change. Direct docker compose commands use the last saved address.
+Use `--prepare` for missing runtime mount paths only. It does not reset ownership or change host networking. Reserve the Pi address in router DHCP settings. `ADDITIONAL_DNS_HOSTS` supplies optional local aliases. Docker internal DNS remains separate. See [operations](docs/OPERATIONS.md) for profile selection and maintenance utilities.
 
 ## Running services independently
 
@@ -140,7 +126,7 @@ Divine command operations orchestration platform. A complete ops stack for manag
 3. **Automated Setup (⚠️ Recommended):**
    Run the setup script to automatically fix all permissions and validate configuration:
    ```bash
-   sudo ./setup.sh
+   ./deploy.sh --prepare --configure-only
    ```
    This script:
    - ✅ Creates all required directories (`certs/`, `data/`, `logs/`)
@@ -388,7 +374,7 @@ docker compose exec elasticsearch sh
 - **[docs/REPOSITORY-HYGIENE.md](docs/REPOSITORY-HYGIENE.md)** — Complete security, hygiene, and operations guidelines
 - **[docker-compose.yml](docker-compose.yml)** — Service configurations and deployment specs
 - **[dns-toggle.sh](dns-toggle.sh)** — DNS management utility
-- **[setup.sh](setup.sh)** — Automated pre-deployment setup script
+- **[deploy.sh](deploy.sh)** — Deployment and explicit first-time preparation
 - **[init-dashboards.sh](init-dashboards.sh)** — Post-deployment dashboard & pipeline initialization
 
 ## 🤝 Contributing
