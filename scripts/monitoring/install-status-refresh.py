@@ -12,11 +12,7 @@ lines = [line for line in result.stdout.splitlines() if not line.endswith(marker
 command = "* * * * * /usr/bin/python3 " + shlex.quote(str(root / "scripts/monitoring/collect-status.py")) + " >/dev/null 2>&1 " + marker
 lines.append(command)
 lines.append("*/15 * * * * /usr/bin/python3 " + shlex.quote(str(root / "scripts/monitoring/collect-tor-metrics.py")) + " >/dev/null 2>&1 # kurukshetra-tor-metrics")
-client = root / "config/nginx/www/client"
-client.mkdir(exist_ok=True)
-(client / "windows-tor.ps1").write_text((root / "scripts/tor-client/windows/windows-tor.ps1").read_text())
-for name in ("tor-client.sh", "trial.sh"):
-    (client / name).write_text((root / "scripts/tor-client" / name).read_text())
+subprocess.run(["/usr/bin/python3", str(root / "scripts/tor-client/publish-downloads.py")], check=True)
 subprocess.run(["crontab", "-"], input="\n".join(lines)+"\n", text=True, check=True)
 subprocess.run(["/usr/bin/python3", str(root / "scripts/monitoring/collect-status.py")], check=True)
 print("Public status refresh installed: every minute, current user, read-only collector")

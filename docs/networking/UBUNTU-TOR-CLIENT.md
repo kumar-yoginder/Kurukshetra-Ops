@@ -6,7 +6,7 @@ Validated on Ubuntu Server 24.04 ARM64. These scripts are not a Windows or unive
 
 1. Provision an individual WireGuard peer on the Pi, with a unique tunnel address. Set `CLIENT_TUNNEL_IP` in the private `local.env` to a unique address in `10.77.0.2` through `10.77.0.254`. Configure the corresponding server peer with exactly that address as `/32` AllowedIPs. The script validates the range but cannot verify remote peer assignments or detect duplicate allocations. Never reuse the tested guest's private key on another VM.
 2. Install prerequisites: `wireguard-tools`, `nftables`, `iproute2`; systemd-resolved and systemd must already be present.
-3. Copy `scripts/tor-client/trial.sh` and `tor-client.sh` together to the target. Prepare a trusted private config directory containing `wg.conf` in native WireGuard format and `local.env` based on the example. Review all values and root-executed code. Do not put actual keys or local settings in Git.
+3. Copy `scripts/tor-client/ubuntu/trial.sh` and `tor-client.sh` together to the target. Prepare a trusted private config directory containing `wg.conf` in native WireGuard format and `local.env` based on the example. Review all values and root-executed code. Do not put actual keys or local settings in Git.
 4. Run `sudo bash tor-client.sh setup PATH_TO_TRUSTED_CONFIG`. This installs root-owned private configuration and command files, without changing routes.
 
 ## Tested Ubuntu instance

@@ -52,6 +52,9 @@ if "$prepare"; then
         (umask 022; touch logs/pihole/pihole.log)
     fi
 fi
+if "$prepare" || { ! "$validate_only" && [[ "${1:-up}" == up ]]; }; then
+    python3 scripts/tor-client/publish-downloads.py
+fi
 if "$validate_only"; then exit 0; fi
 if [[ $# -eq 0 ]]; then set -- up -d; fi
 exec "${compose[@]}" "$@"
