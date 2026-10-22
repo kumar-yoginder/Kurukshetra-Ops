@@ -45,3 +45,9 @@ Monitoring remains optional: use explicit Compose monitoring profiles and follow
 DNS maintenance lives in `scripts/dns/dns-toggle.sh`; dashboard initialization lives in `scripts/monitoring/init-dashboards.sh`. DNS recovery changes resolver settings and restarts Docker; neither maintenance utility runs during normal deployment.
 
 All services are defined in one `docker-compose.yml`. Gateway, Tor and monitoring remain separate opt-in profiles. The former Tor overlay file has been removed.
+
+## Runtime storage
+
+The tracked `data/.gitkeep` retains the main data directory. Pi-hole keeps its existing ignored bind mount. Elasticsearch uses the Compose-managed `elasticsearch-data` named volume, created when the monitoring profile starts; no host Elasticsearch directory or ownership setup is required. The old host `data/es_data` contents are intentionally discarded at the operator request, not migrated.
+
+Use `./deploy.sh --monitoring up -d` to select monitoring. `--prepare` remains necessary on first installation for the Pi-hole log-file bind mount; Compose cannot create that source as a regular file automatically.

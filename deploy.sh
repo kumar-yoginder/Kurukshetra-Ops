@@ -8,6 +8,7 @@ usage() {
 Usage: ./deploy.sh [--gateway] [--tor] [--prepare] [COMPOSE COMMAND...]
 Default: Pi-hole only, up -d. --tor enables the Tor profile.
 --gateway enables HTTPS gateway and certificate services.
+--monitoring enables Elasticsearch, Filebeat and Kibana (configure them first).
 --prepare creates missing runtime mount paths without changing existing ownership.
 --configure-only validates configuration without starting services.
 Examples:
@@ -26,6 +27,7 @@ tor=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --gateway) profiles+=(--profile gateway); shift ;;
+        --monitoring) profiles+=(--profile monitoring); shift ;;
         --tor) tor=true; profiles+=(--profile tor); shift ;;
         --prepare) prepare=true; shift ;;
         --configure-only) validate_only=true; shift ;;

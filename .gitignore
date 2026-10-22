@@ -10,8 +10,7 @@ certs/*.srl
 certs/*.crt
 
 # Runtime data - do not version control
-data/es_data/*
-!data/es_data/.gitkeep
+data/es_data/
 
 # Logs
 logs/*
