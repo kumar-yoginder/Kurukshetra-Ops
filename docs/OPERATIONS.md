@@ -51,3 +51,9 @@ All services are defined in one `docker-compose.yml`. Gateway, Tor and monitorin
 The tracked `data/.gitkeep` retains the main data directory. Pi-hole keeps its existing ignored bind mount. Elasticsearch uses the Compose-managed `elasticsearch-data` named volume, created when the monitoring profile starts; no host Elasticsearch directory or ownership setup is required. The old host `data/es_data` contents are intentionally discarded at the operator request, not migrated.
 
 Use `./deploy.sh --monitoring up -d` to select monitoring. `--prepare` remains necessary on first installation for the Pi-hole log-file bind mount; Compose cannot create that source as a regular file automatically.
+
+## Public status page
+
+The landing page shows only allowlisted service display names, basic container states and snapshot time. It publishes no image versions, IPs, ports, logs, environment, or credentials, and provides no management actions. Running without a health check is distinguished from healthy. Optional missing services display Not deployed.
+
+Install the per-user minute collector using `python3 scripts/monitoring/install-status-refresh.py`. Existing unrelated cron jobs are preserved. The browser fetches the ignored generated `status.json` every 30 seconds and marks snapshots stale after three minutes. The collector uses the operator existing Docker access; no Docker socket is mounted into Nginx. No API backend or container restart is required. To remove the schedule, use `crontab -e` and delete only the line ending `# kurukshetra-public-status`.
