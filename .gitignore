@@ -34,7 +34,8 @@ venv/
 
 # Local Pi-hole configuration and migration backups
 data/pihole/
-backups/
+/backups/*
+!/backups/.gitkeep
 
 .env.network-tmp
 
