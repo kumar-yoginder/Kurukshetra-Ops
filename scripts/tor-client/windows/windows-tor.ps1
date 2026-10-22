@@ -23,6 +23,8 @@ function Copy-ClientTools {
     if ($PSCommandPath -ine $target) { Copy-Item -LiteralPath $PSCommandPath -Destination $target -Force }
     $target = Join-Path $directory 'open-tor-browser.ps1'
     if ($helper -ine $target) { Copy-Item -LiteralPath $helper -Destination $target -Force }
+    $installer = Join-Path $PSScriptRoot 'install-shortcuts.ps1'
+    if ((Test-Path -LiteralPath $installer) -and -not $identity.IsSystem) { & $installer }
 }
 function Open-ManagedBrowser {
     $helper = Join-Path $directory 'open-tor-browser.ps1'

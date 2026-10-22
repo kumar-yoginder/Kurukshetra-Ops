@@ -51,3 +51,9 @@ The operator confirmed onion access using the SOCKS5 Chrome command. This confir
 ## Automatic browser desktop trial
 
 The updated controller and browser helper were installed without changing peer settings. A local interactive-user scheduled trial reported connected=true, browser_started=true, tor_verified=true, disconnected=true, error=null. The VM screen showed the official onion blog loaded in the launched Chrome window. Both temporary trial/recovery tasks were removed; Windows was left disconnected. Chrome displayed its warning about the advanced host-resolver-rules flag; no warning was suppressed. The source and downloads retain that explicit proxy-side DNS configuration.
+
+## Desktop and Start menu shortcuts
+
+The operator requested GUI entry points. install-shortcuts.ps1 installs Connect Tor, Open Tor Browser, and Disconnect Tor for the current user on Desktop and in Start menu/Kurukshetra Tor. Connect and Disconnect use normal UAC elevation; the browser shortcut launches the existing installed browser with the separate persistent Tor profile and proxy arguments. No default-browser profile or system proxy is changed. Connect auto-opens the browser; Open Tor Browser is useful when already connected and cannot load sites while disconnected. This is not installation of the separate Tor Browser application.
+
+All six shortcut files and targets were verified; encoded elevation commands parsed successfully and retained Verb RunAs. No shortcut was clicked remotely to approve UAC. CurrentUser execution policy remained Undefined. Setup/Update also installs shortcuts when their installer is downloaded alongside the client.
