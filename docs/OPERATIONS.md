@@ -73,3 +73,5 @@ Speed probe reference: [Cloudflare speed-test engine](https://github.com/cloudfl
 The single source of truth is `scripts/tor-client/ubuntu/` and `scripts/tor-client/windows/`. Ubuntu is named specifically because support is validated for Ubuntu 24.04, not all Linux distributions. `publish-downloads.py` atomically generates an explicit public-file allowlist under `config/nginx/www/client/ubuntu/` and `/windows/`, with SHA256SUMS. Private profiles, keys and session-test helpers are never published. Generated copies are ignored by Git.
 
 Deployment startup/explicit preparation and status-schedule installation call the publisher. Run `python3 scripts/tor-client/publish-downloads.py` after a source-only edit if not deploying. Status and log commands do not republish. Cross-directory symlinks are unsuitable because Nginx mounts only its web directory. Existing installed guest files remain independent until explicitly updated.
+
+Saved JSON uses two-space indentation, Unicode text, and a trailing newline. This applies to configuration and snapshots; private JSON remains ignored and owner-readable only.

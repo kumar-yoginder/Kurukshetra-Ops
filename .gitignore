@@ -67,3 +67,24 @@ data/pihole/
 /config/nginx/www/tor-metrics.json
 /config/nginx/www/.tor-*
 /config/nginx/www/client/
+
+# Generated anonymous DNS activity snapshot
+/config/nginx/www/dns-activity.json
+/config/nginx/www/.dns-*
+
+# Private router session and observation history
+/config/router-inventory/local.json
+/config/router-inventory/session-token
+/data/router-inventory/
+
+/config/router-inventory/session.json
+/.venv-router/
+
+/config/router-inventory/secrets/
+/config/router-inventory/container.json
+/data/dns-activity/
+
+# Central identity secrets and generated runtime configuration
+/config/gateway/private/
+/data/identity/
+/data/gateway-migration/

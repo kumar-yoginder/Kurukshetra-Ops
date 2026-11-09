@@ -1,0 +1,5 @@
+log_format waf_safe '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status';
+access_log /dev/stdout waf_safe;
+# Payload-bearing rule messages must not expose login credentials in stderr.
+# Safe access status and metadata-only audit transactions remain available.
+error_log /dev/stderr crit;

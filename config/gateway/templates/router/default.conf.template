@@ -1,0 +1,114 @@
+map $http_accept $wants_html { default 0; ~*text/html 1; }
+map $request_method $unsafe_method { default 1; GET 0; HEAD 0; OPTIONS 0; }
+map $http_origin $trusted_origin { default 0; "https://__GATEWAY_HOST__" 1; }
+map "$unsafe_method:$trusted_origin" $reject_origin { default 0; "1:0" 1; }
+server {
+    listen 8080;
+    server_name __GATEWAY_HOST__;
+    server_tokens off;
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    root /usr/share/nginx/html;
+    index index.html;
+    client_max_body_size 2m;
+    auth_request /_internal/session;
+    auth_request_set $authenticated_user $upstream_http_remote_user;
+    auth_request_set $central_redirect $upstream_http_location;
+    error_page 401 = @signin;
+    error_page 403 = @forbidden;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" always;
+    location = /_internal/session {
+        internal;
+        auth_request off;
+        set $identity http://identity:9091/api/authz/auth-request;
+        proxy_pass $identity;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header X-Original-Method $request_method;
+        proxy_set_header X-Original-URL https://__GATEWAY_HOST__$request_uri;
+        proxy_set_header X-Forwarded-For $http_x_gateway_client_ip;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host __GATEWAY_HOST__;
+        proxy_set_header Host __GATEWAY_HOST__;
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header Authorization "";
+        proxy_set_header Connection "";
+        proxy_connect_timeout 3s;
+        proxy_read_timeout 5s;
+    }
+    location @signin {
+        auth_request off;
+        if ($wants_html) { return 302 $central_redirect; }
+        default_type application/json;
+        return 401 '{"error":"authentication_required"}';
+    }
+    location @forbidden {
+        auth_request off;
+        default_type application/json;
+        return 403 '{"error":"access_denied"}';
+    }
+    location = /auth { auth_request off; return 308 /auth/; }
+    location /auth/ {
+        auth_request off;
+        set $identity http://identity:9091;
+        proxy_pass $identity;
+        proxy_set_header Host __GATEWAY_HOST__;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host __GATEWAY_HOST__;
+        proxy_set_header X-Forwarded-For $http_x_gateway_client_ip;
+        proxy_set_header Connection "";
+        proxy_read_timeout 30s;
+        # Authelia supplies its own CSP for its managed login assets.
+        add_header Cache-Control no-store always;
+    }
+    location = /nginx_status { return 404; }
+    location ~ (^|/)\. { deny all; }
+    location /inventory/ {
+        set $inventory http://router-inventory:8765;
+        rewrite ^/inventory/(.*)$ /$1 break;
+        proxy_pass $inventory;
+        proxy_set_header Host 127.0.0.1:8765;
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header Connection "";
+    }
+    location /admin/ {
+        set $pihole_bridge http://pihole-bridge:8080;
+        proxy_pass $pihole_bridge;
+        proxy_set_header Host __GATEWAY_HOST__;
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header X-Gateway-Client-IP $http_x_gateway_client_ip;
+        proxy_set_header Connection "";
+        # Pi-hole's native UI contains inline style/script blocks; preserve its own CSP.
+        add_header Cache-Control no-store always;
+    }
+    location /api/ {
+        if ($reject_origin) { return 403; }
+        set $pihole_bridge http://pihole-bridge:8080;
+        proxy_pass $pihole_bridge;
+        proxy_set_header Host __GATEWAY_HOST__;
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header X-Gateway-Client-IP $http_x_gateway_client_ip;
+        proxy_set_header Connection "";
+    }
+    location /kibana/ {
+        if ($reject_origin) { return 403; }
+        set $kibana http://kibana:5601;
+        proxy_pass $kibana;
+        proxy_set_header Host __GATEWAY_HOST__;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Connection "";
+        add_header Cache-Control no-store always;
+    }
+    location /elastic/ {
+        if ($reject_origin) { return 403; }
+        set $elastic http://elasticsearch:9200;
+        rewrite ^/elastic/(.*)$ /$1 break;
+        proxy_pass $elastic;
+        proxy_set_header Connection "";
+    }
+    location = /status.json { alias /snapshots/status.json; }
+    location = /dns-activity.json { alias /snapshots/dns-activity.json; }
+    location = /tor-metrics.json { alias /snapshots/tor-metrics.json; }
+    location /client/ { alias /snapshots/client/; }
+    location / { try_files $uri $uri/ =404; }
+}

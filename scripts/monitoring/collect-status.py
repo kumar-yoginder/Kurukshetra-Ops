@@ -10,7 +10,11 @@ import tempfile
 root = Path(__file__).resolve().parents[2]
 services = [('Pi-hole', 'pihole'), ('HTTPS gateway', 'kurukshetra-gateway'),
             ('Certificate service', 'cert-gen'), ('Tor gateway', 'kurukshetra-ops-tor-gateway-1'),
-            ('Bot', 'chitragupt_bot'), ('Elasticsearch', 'elasticsearch'),
+            ('Bot', 'chitragupt_bot'), ('Central identity', 'kurukshetra-ops-identity-1'),
+            ('Web application firewall', 'kurukshetra-ops-gateway-waf-1'),
+            ('Private inventory', 'kurukshetra-ops-router-inventory-1'),
+            ('Pi-hole session bridge', 'kurukshetra-ops-pihole-bridge-1'),
+            ('Application router', 'kurukshetra-ops-web-router-1'), ('Elasticsearch', 'elasticsearch'),
             ('Kibana', 'kibana'), ('Filebeat', 'filebeat')]
 rows = []
 for label, container in services:
@@ -48,10 +52,16 @@ directory = root / 'config/nginx/www'
 fd, temporary = tempfile.mkstemp(prefix='.status-', dir=directory)
 try:
     with os.fdopen(fd, 'w') as output:
-        json.dump(payload, output)
+        json.dump(payload, output, indent=2, ensure_ascii=False)
         output.write('\n')
         os.fchmod(output.fileno(), 0o644)
     os.replace(temporary, directory / 'status.json')
 finally:
     if os.path.exists(temporary):
         os.unlink(temporary)
+
+# DNS collection failure never blocks the existing service summary.
+try:
+    subprocess.run(["/usr/bin/python3", str(root / "scripts/monitoring/collect-dns-activity.py")], timeout=30, check=False)
+except (OSError, subprocess.TimeoutExpired):
+    pass

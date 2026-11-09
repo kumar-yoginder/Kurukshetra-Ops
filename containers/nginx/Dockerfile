@@ -1,1 +1,1 @@
-FROM nginx@sha256:67cbbcc757a6ce913b33e515b020cfd3923897ad883c452903b1e3487a95a570
+FROM nginx:stable-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311

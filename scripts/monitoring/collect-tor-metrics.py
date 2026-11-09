@@ -27,6 +27,6 @@ except (OSError, ValueError, subprocess.TimeoutExpired):
     pass
 fd, name = tempfile.mkstemp(prefix=".tor-metrics-", dir=root / "config/nginx/www")
 with os.fdopen(fd, "w") as output:
-    json.dump(result, output)
+    json.dump(result, output, indent=2, ensure_ascii=False)
     os.fchmod(output.fileno(), 0o644)
 os.replace(name, root / "config/nginx/www/tor-metrics.json")

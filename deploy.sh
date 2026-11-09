@@ -5,10 +5,11 @@ PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 usage() {
     cat <<'HELP'
-Usage: ./deploy.sh [--gateway] [--tor] [--prepare] [COMPOSE COMMAND...]
+Usage: ./deploy.sh [--gateway] [--tor] [--inventory] [--prepare] [COMPOSE COMMAND...]
 Default: Pi-hole only, up -d. --tor enables the Tor profile.
 --gateway enables HTTPS gateway and certificate services.
 --monitoring enables Elasticsearch, Filebeat and Kibana (configure them first).
+--inventory enables the private router collector (configure guest secrets first).
 --prepare creates missing runtime mount paths without changing existing ownership.
 --configure-only validates configuration without starting services.
 Examples:
@@ -28,6 +29,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --gateway) profiles+=(--profile gateway); shift ;;
         --monitoring) profiles+=(--profile monitoring); shift ;;
+        --inventory) profiles+=(--profile inventory); shift ;;
         --tor) tor=true; profiles+=(--profile tor); shift ;;
         --prepare) prepare=true; shift ;;
         --configure-only) validate_only=true; shift ;;
