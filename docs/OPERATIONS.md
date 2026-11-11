@@ -1,77 +1,86 @@
 # Operations
 
-Run commands on the Pi from the repository root.
+Run production commands on the Pi from the repository root. Start with [architecture](ARCHITECTURE.md), [data flow](networking/DATA-FLOW.md), and [authentication](security/AUTHENTICATION.md) if the service boundaries are unfamiliar.
 
-## Start the deployed stack
+## Prepare private configuration
 
-```sh
-docker compose -f docker-compose.yml --profile gateway --profile tor up -d --build
+- Keep the stable site address and existing Pi-hole password in ignored `.env`. Deployment does not discover or rewrite addresses.
+- Provision a leaf certificate covering the configured gateway hostname and establish client trust in the local CA. Do not regenerate the CA for a normal deployment. Nginx mounts only its leaf certificate/key.
+- Prepare centralized identity using the local gateway bootstrap and an existing monitoring Python environment with the pinned Pydantic dependencies. Enter the password only at the hidden local prompts. The helper refuses to overwrite existing identities/encryption keys; preserve them during updates.
+- The inventory profile needs private router settings, an approved certificate pin and guest credentials entered through `configure-router-secrets.py`. Do not pass a password in CLI arguments or commit generated settings.
+- The Tor profile needs the separately provisioned private WireGuard configuration and selected bind address. Never distribute a peer’s private profile through the portal.
+
+Gateway and inventory bootstrap, secret-file boundaries and lifecycle caveats are detailed in [gateway operations](security/GATEWAY.md) and [private inventory](networking/PRIVATE-INVENTORY.md). File-backed Compose secrets are not an encrypted vault.
+
+## Deploy an already provisioned stack
+
+```bash
+./deploy.sh --gateway --tor --inventory --prepare --configure-only
+./deploy.sh --gateway --tor --inventory up -d --build
+./deploy.sh --gateway --tor --inventory ps
+./deploy.sh --gateway --tor --inventory logs --tail 30
 ```
 
-This starts Pi-hole, certificate management, Nginx and Tor. Monitoring is optional. The bot is managed by its separate Compose project.
+One Compose file defines all services. Pi-hole starts by default; gateway, Tor, inventory and monitoring use opt-in profiles. Profiles select what starts, not what stops. The bot is managed by its separate Compose project. `--prepare` creates missing runtime paths and a regular Pi-hole log file; it does not reset ownership or change host networking. There is no automatic address discovery or recursive permission repair.
 
-## Images and layout
+| Task | Command / guide |
+| --- | --- |
+| Validate selected stack | `./deploy.sh --gateway --tor --inventory config --quiet` |
+| List every profile | `docker compose --profile "*" ps -a` |
+| Restart Pi-hole only | `docker compose restart pihole` |
+| Stop inventory collection | `docker compose stop router-inventory` |
+| Stop Tor gateway | `docker compose stop tor-gateway` |
+| Stop the full project | `docker compose --profile "*" stop` |
+| Enable optional monitoring | Configure it first, then `./deploy.sh --gateway --monitoring up -d` |
+| DNS recovery utility | `scripts/dns/dns-toggle.sh`; changes resolver settings/restarts Docker |
+| Optional dashboard initialization | `scripts/monitoring/init-dashboards.sh` |
 
-Project images use CalVer tags: `kurukshetra/nginx-gateway:2026.10.23` and `kurukshetra/tor-gateway:2026.10.23.2`. Nginx retains the previously deployed upstream digest. Vendor services keep upstream version tags.
+Do not remove central authorization to repair an unavailable backend. A stopped backend returns unavailable rather than becoming publicly accessible. Optional monitoring has separate setup/resource requirements and has not been validated in every gateway checkpoint.
 
-- `config/`: service configuration and safe examples; site settings ignored.
+## Web access and health
+
+Use the configured canonical HTTPS hostname. A single central session gates the portal, Pi-hole, inventory JSON, snapshots, client downloads and monitoring routes. HTTP 80 is closed, not redirected. Direct IP web access is rejected. Identity, inventory, WAF and session-bridge listeners have no published host web port. DNS 53, SSH and WireGuard UDP 51820 remain necessary non-web protocols.
+
+The former standalone inventory page and its HTML/CSS/JavaScript are removed. The main portal consumes the retained authenticated JSON feed. The former loopback inventory forwarding workflow is retired. Current topology and controls are documented in [architecture](ARCHITECTURE.md) and [gateway security](security/GATEWAY.md).
+
+A container that is running without a health check is shown as running, not healthy. A DHCP lease is not proof of current device presence, and a WireGuard handshake is not a continuous connection guarantee. Certificate generation is a lifecycle job and need not run continuously. Consult [validation limits](security/GATEWAY.md) rather than treating all green container statuses as end-to-end proof.
+
+## Collection schedules and freshness
+
+| Producer | Normal cadence | Published data |
+| --- | --- | --- |
+| Host status/DNS job | Every minute | Allowlisted service state, anonymous DNS totals, separate private DNS counters |
+| Inventory container | Every minute with failure backoff | Private router observations and 24-hour history |
+| Host home/Tor probe | Every 15 minutes | Separate bounded download/upload/HTTPS-response samples |
+| Portal | Every 30 seconds while visible | Reads saved data; does not start probes |
+
+The status cron marker remains `kurukshetra-public-status` for compatibility; its name does not mean the endpoint is public. The Tor cron marker remains `kurukshetra-tor-metrics`, and that job now samples both the direct Pi uplink and Tor. Do not install duplicate host and container inventory schedules. Remove only the relevant marked entry in `crontab -e` when retiring a host schedule.
+
+Router authentication renews automatically from locally mounted guest credentials. Rejected credentials pause retries until the secret changes; network errors back off. Certificate mismatch fails closed. The portal labels failed or old data stale rather than inventing current state. Saved JSON uses two-space indentation, Unicode and a trailing newline, with atomic publication and private permissions where needed.
+
+See [data flow](networking/DATA-FLOW.md) and [speed methodology](networking/CONNECTION-SPEED.md) for caps, attribution limits and failure states.
+
+## Images, layout and storage
+
+Own images currently use CalVer tags: Nginx/session bridge `2026.11.09`, inventory `2026.11.11`, Tor `2026.10.23.2`. Check `docker-compose.yml` for the authoritative tags/digests. Vendor image references vary: some are pinned by digest, while other existing definitions still use upstream tags. Updating an image is a reviewed deployment change, not part of a documentation refresh.
+
+- `config/`: templates, safe examples and canonical UI assets. Generated site settings are ignored.
 - `containers/`: custom image sources.
-- `scripts/`: host and guest operations grouped by feature.
-- `docs/networking/` and `docs/security/`: operational guides.
-- `certs/`, `data/`, `logs/`, `backups/`: local runtime material.
-- Implementation plans stay local and excluded from Git.
+- `scripts/`: operations grouped by feature, plus a synthetic documentation preview.
+- `docs/`: architecture, security, networking, UI and approved screenshots.
+- `certs/`, `data/`, `logs/`, `backups/`: local runtime material. Private contents stay outside Git.
+- Implementation plans remain local and ignored.
 
-The ignored `.env` supplies `PIHOLE_API_PASSWORD`, `PIHOLE_LAN_IP`, and `TOR_BIND_IP`. Existing credentials were preserved. Never commit keys or private settings.
+Pi-hole retains its existing bind-mounted runtime data. Elasticsearch uses a Compose-managed volume when the monitoring profile starts; it does not require host `data/es_data` ownership repair. Identity state must be backed up together with its storage encryption key to a private destination. Inventory observations are pruned to a rolling 24 hours; this is not a permanent device audit trail.
 
-Ethernet/Wi-Fi recovery runs as a separate host systemd service; Compose does not manage it. See [Wi-Fi recovery](networking/WIFI-SSH-RECOVERY.md), [Ubuntu client](networking/UBUNTU-TOR-CLIENT.md), and [host hardening](security/HOST-HARDENING.md).
+Host Ethernet/Wi-Fi recovery is a separate systemd service, outside Compose. See [recovery](networking/WIFI-SSH-RECOVERY.md) before changing interfaces. Temporary diagnostic sudo access was removed after gateway verification; do not assume it is still available.
 
-## Single deployment entry point
+## Client sources and downloads
 
-`deploy.sh` replaces the separate setup script. It preserves private `.env` settings and existing file ownership. No automatic IP discovery or sudo is used.
+Canonical client sources live in `scripts/tor-client/ubuntu/` and `scripts/tor-client/windows/`. `publish-downloads.py` atomically publishes an explicit script allowlist and checksums under the generated web snapshot directory. Private profiles/keys are never included. Downloads now require the central session.
 
-For a fresh checkout, create private `.env` with `PIHOLE_LAN_IP` and `PIHOLE_API_PASSWORD`. Provision Tor keys separately before selecting Tor; `TOR_BIND_IP` controls its LAN endpoint. Never commit those files.
+Deployment startup/preparation and status-schedule setup call the publisher. After a source-only change, run `python3 scripts/tor-client/publish-downloads.py` if not deploying. Installed guest files are independent until explicitly updated. Platform support and test limits are in the [Ubuntu](networking/UBUNTU-TOR-CLIENT.md) and [Windows](networking/WINDOWS-TOR-CLIENT.md) guides.
 
-```sh
-./deploy.sh --gateway --tor --prepare --configure-only
-./deploy.sh --gateway --tor up -d --build
-./deploy.sh --gateway --tor ps
-./deploy.sh --gateway --tor logs --tail 50
-```
+## Documentation captures
 
-`--prepare` creates only missing runtime directories and the Pi-hole log file. Existing root-owned paths are not changed. Permission problems need a specific operator fix, not recursive ownership resets. Without flags, deployment selects Pi-hole only. Flags precede the Compose command. `--configure-only` validates existing settings; it no longer discovers or writes addresses.
-
-Monitoring remains optional: use explicit Compose monitoring profiles and follow its separate configuration requirements. Host network recovery and guest Tor setup remain separate utilities.
-
-DNS maintenance lives in `scripts/dns/dns-toggle.sh`; dashboard initialization lives in `scripts/monitoring/init-dashboards.sh`. DNS recovery changes resolver settings and restarts Docker; neither maintenance utility runs during normal deployment.
-
-All services are defined in one `docker-compose.yml`. Gateway, Tor and monitoring remain separate opt-in profiles. The former Tor overlay file has been removed.
-
-## Runtime storage
-
-The tracked `data/.gitkeep` retains the main data directory. Pi-hole keeps its existing ignored bind mount. Elasticsearch uses the Compose-managed `elasticsearch-data` named volume, created when the monitoring profile starts; no host Elasticsearch directory or ownership setup is required. The old host `data/es_data` contents are intentionally discarded at the operator request, not migrated.
-
-Use `./deploy.sh --monitoring up -d` to select monitoring. `--prepare` remains necessary on first installation for the Pi-hole log-file bind mount; Compose cannot create that source as a regular file automatically.
-
-## Public status page
-
-The landing page shows only allowlisted service display names, basic container states and snapshot time. It publishes no image versions, IPs, ports, logs, environment, or credentials, and provides no management actions. Running without a health check is distinguished from healthy. Optional missing services display Not deployed.
-
-Install the per-user minute collector using `python3 scripts/monitoring/install-status-refresh.py`. Existing unrelated cron jobs are preserved. The browser fetches the ignored generated `status.json` every 30 seconds and marks snapshots stale after three minutes. The collector uses the operator existing Docker access; no Docker socket is mounted into Nginx. No API backend or container restart is required. To remove the schedule, use `crontab -e` and delete only the line ending `# kurukshetra-public-status`.
-
-## Public Tor details
-
-The Tor card opens anonymous peer activity, setup commands and cached Tor path measurements. No peer keys, LAN endpoint addresses or tunnel addresses are published. Recent handshake is not a connected-device guarantee. A private per-device peer bundle remains required; setup is Ubuntu 24.04 only. Public client-script downloads are generated from reviewed source when installing refresh jobs.
-
-`collect-tor-metrics.py` schedules a bounded 256 KiB HTTPS download through container-local SOCKS every 15 minutes. There is no public command endpoint and no direct-network fallback. Tor verification uses check.torproject.org; the sample uses Cloudflare speed-test download endpoint. Metrics can fail or time out. Sample throughput includes connection setup and is not maximum bandwidth. Probe exit IP may differ from clients or subsequent circuits. The SOCKS listener is loopback-only inside the Tor container, with no published port.
-
-The details remain public at the operator request. mTLS is deferred and not enabled. Remove the `# kurukshetra-tor-metrics` cron line to stop probes.
-
-Speed probe reference: [Cloudflare speed-test engine](https://github.com/cloudflare/speedtest/blob/main/README.md). This is a small sample, not its full methodology.
-
-## Platform client sources and downloads
-
-The single source of truth is `scripts/tor-client/ubuntu/` and `scripts/tor-client/windows/`. Ubuntu is named specifically because support is validated for Ubuntu 24.04, not all Linux distributions. `publish-downloads.py` atomically generates an explicit public-file allowlist under `config/nginx/www/client/ubuntu/` and `/windows/`, with SHA256SUMS. Private profiles, keys and session-test helpers are never published. Generated copies are ignored by Git.
-
-Deployment startup/explicit preparation and status-schedule installation call the publisher. Run `python3 scripts/tor-client/publish-downloads.py` after a source-only edit if not deploying. Status and log commands do not republish. Cross-directory symlinks are unsuitable because Nginx mounts only its web directory. Existing installed guest files remain independent until explicitly updated.
-
-Saved JSON uses two-space indentation, Unicode text, and a trailing newline. This applies to configuration and snapshots; private JSON remains ignored and owner-readable only.
+Use only the loopback synthetic preview documented in [screenshot workflow](ui/SCREENSHOTS.md). The preview does not read production data or secrets, and must never be deployed as an unauthenticated production route. No production service restart is needed to edit Markdown or update approved screenshots.

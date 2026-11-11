@@ -1,5 +1,7 @@
 # Central gateway security and operations
 
+See [architecture](../ARCHITECTURE.md), [data flow](../networking/DATA-FLOW.md), and [authentication sequence diagrams](AUTHENTICATION.md) for the system overview.
+
 ## Access model
 
 Use the configured gateway hostname over HTTPS. The IP-address URL is deliberately rejected so cookies, certificate names and same-origin checks have one canonical origin. One Authelia session gates the portal, snapshots, inventory, client downloads, Pi-hole and optional monitoring routes. All portal accounts have the same access; no role hierarchy is configured. The login page and its necessary assets/API are the authentication entry point. Backends have no published web ports. HTTP port 80 is closed, rather than redirected.

@@ -37,3 +37,9 @@ python3 scripts/monitoring/collect-tor-metrics.py
 Five mocked tests cover truncated downloads, upload failure, connection failure, nonfinite values, and rejecting unverified Tor speed values. Both live paths completed during deployment. Inventory continues through its internal JSON-only endpoint; its separate HTML/CSS/JavaScript page and build context have been removed.
 
 Measurement API reference: https://github.com/cloudflare/speedtest
+
+## Documentation preview
+
+![Home and Tor measurement cards with synthetic values](../assets/dashboard-speed.jpg)
+
+*All speeds, names and identifiers shown are documentation fixtures. See [data flow](DATA-FLOW.md) and [capture privacy](../ui/SCREENSHOTS.md).*

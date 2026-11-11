@@ -50,3 +50,9 @@ python3 scripts/monitoring/test-dns-activity.py
 Tests cover schema rejection, redacted secrets, certificate mismatch before session transmission, private-file permissions, merge semantics, and failure-state preservation. Live checks cover guest login, polling, DNS joins, private HTTP routes and simulated expired-session renewal. Natural long-duration expiry and reboot remain separate follow-up checks. No Nmap component is installed; enrichment is a later optional phase.
 
 Rollback: stop the single inventory service. Public DNS summaries and the existing Pi-hole/Tor/gateway services continue. Keep private state if history is needed; remove secret files only when retiring the integration. Do not enable the old host cron while the container runs.
+
+## Data-flow reference and documentation preview
+
+See [collection flow](DATA-FLOW.md) for validation, DNS joins, retention and freshness. The image below uses synthetic fixtures with identifiers hidden; no production records were used.
+
+![Synthetic device inventory with all identifiers hidden](../assets/dashboard-inventory.jpg)
