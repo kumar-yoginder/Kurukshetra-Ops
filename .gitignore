@@ -88,3 +88,6 @@ data/pihole/
 /config/gateway/private/
 /data/identity/
 /data/gateway-migration/
+
+# Generated private gateway throughput samples
+/config/nginx/www/speed-metrics.json

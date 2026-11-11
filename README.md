@@ -471,3 +471,5 @@ Private device inventory is available through the optional `inventory` profile. 
 ## Central portal
 
 The gateway now requires one shared login for all web views and APIs. Use the configured HTTPS hostname; direct IP and HTTP access are rejected. See [gateway security and operations](docs/security/GATEWAY.md) and [portal design system](docs/ui/DESIGN-SYSTEM.md). DNS, SSH recovery and WireGuard remain separate non-web services.
+
+Connection speed: the authenticated **Internet speed** view shows separate Pi home-uplink and Tor throughput samples on the existing 15-minute schedule. See [measurement details](docs/networking/CONNECTION-SPEED.md).

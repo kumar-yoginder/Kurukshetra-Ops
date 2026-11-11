@@ -9,7 +9,6 @@ The optional `inventory` Compose profile polls the Jio router every minute and j
 - `scripts/monitoring/router_inventory/`: Pydantic contracts, router adapter, repository, collector and runtime scheduler.
 - `scripts/monitoring/configure-router-secrets.py`: interactive local credential setup.
 - `scripts/monitoring/serve-private-inventory.py`: allowlisted private HTTP routes.
-- `config/router-inventory/www/`: HTML, CSS and JavaScript; no private data embedded.
 - `containers/router-inventory/`: image build definition. Additional build contexts copy canonical source and UI assets; no duplicated source and no private configuration in the image.
 - `config/router-inventory/local.json`, `container.json`, `secrets/`: ignored local settings and owner-only secret files.
 - `data/router-inventory/`: ignored private SQLite observations, snapshot and renewable session.
@@ -31,7 +30,7 @@ The earlier host cron collector has been removed. The container owns its polling
 
 ## Protected access
 
-Open the configured HTTPS gateway hostname, sign in once and select Device inventory. The detailed legacy view is at `/inventory/`, using that same session. Inventory has no published host port; the former loopback SSH-forward workflow is retired. All snapshots and downloads are protected by centralized login. mTLS is not yet implemented. See [gateway security](../security/GATEWAY.md).
+Open the configured HTTPS gateway hostname, sign in once and select Device inventory. The separate legacy HTML/CSS/JavaScript page has been removed. Only the authenticated `/inventory/inventory.json` data feed remains; `/inventory/` returns 404. Inventory has no published host port; the former loopback SSH-forward workflow is retired. All snapshots and downloads are protected by centralized login. mTLS is not yet implemented. See [gateway security](../security/GATEWAY.md).
 
 ## Authentication and failure handling
 

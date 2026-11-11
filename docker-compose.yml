@@ -354,8 +354,7 @@ services:
       additional_contexts:
         inventory-source: ./scripts/monitoring/router_inventory
         monitoring-entry: ./scripts/monitoring
-        inventory-ui: ./config/router-inventory/www
-    image: kurukshetra/router-inventory:2026.11.09
+    image: kurukshetra/router-inventory:2026.11.11
     user: "${INVENTORY_UID:-1000}:${INVENTORY_GID:-1000}"
     restart: unless-stopped
     cap_drop: [ALL]

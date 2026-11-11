@@ -2,7 +2,7 @@
 
 ## Structure
 
-Desktop uses a collapsible navigation rail, main workspace and a context panel when width permits. The main workspace has a session header, title/refresh action, freshness notice, three metrics, asymmetric DNS chart/presence ring and selectable device cards. Views: overview, inventory, activity history, services and Tor gateway. Narrow layouts stack metrics and content and move navigation/context into the document flow. Detailed inventory is an additional protected route under the same login.
+Desktop uses a collapsible navigation rail, main workspace and a context panel when width permits. The main workspace has a session header, title/refresh action, freshness notice, three metrics, asymmetric DNS chart/presence ring and selectable device cards. Views: overview, inventory, activity history, services, Internet speed and Tor gateway. Narrow layouts stack metrics and content and move navigation/context into the document flow. All inventory presentation lives in this shared portal; there is no separate detailed-inventory page.
 
 ## Theme and typography
 
@@ -35,3 +35,5 @@ Motion uses the requested cubic-bezier(.16,1,.3,1) easing, restrained elevation 
 ## Validation limits
 
 Desktop rendering, live data, search and central session flows were checked in the browser. Responsive CSS exists, but the browser viewport override did not change the observed viewport; a real phone check remains advisable. Provider-managed login UI uses Authelia’s dark theme rather than custom credential-handling JavaScript.
+
+Internet speed shows separately timed home/Tor download, upload and HTTPS response samples with byte caps and freshness. See [measurement details](../networking/CONNECTION-SPEED.md). The old standalone detailed-inventory UI was removed; the shared portal uses its retained JSON feed.

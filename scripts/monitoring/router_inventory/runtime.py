@@ -1,4 +1,4 @@
-"""Container lifecycle: bounded collection, backoff and loopback-published UI."""
+"""Container lifecycle: bounded collection, backoff and internal JSON endpoint."""
 import os
 from pathlib import Path
 import runpy

@@ -62,15 +62,16 @@ server {
     }
     location = /nginx_status { return 404; }
     location ~ (^|/)\. { deny all; }
-    location /inventory/ {
-        set $inventory http://router-inventory:8765;
-        rewrite ^/inventory/(.*)$ /$1 break;
+    location = /inventory/inventory.json {
+        set $inventory http://router-inventory:8765/inventory.json;
         proxy_pass $inventory;
         proxy_set_header Host 127.0.0.1:8765;
         proxy_set_header Cookie "";
         proxy_set_header Authorization "";
         proxy_set_header Connection "";
     }
+    location = /inventory { return 404; }
+    location /inventory/ { return 404; }
     location /admin/ {
         set $pihole_bridge http://pihole-bridge:8080;
         proxy_pass $pihole_bridge;
@@ -109,6 +110,7 @@ server {
     location = /status.json { alias /snapshots/status.json; }
     location = /dns-activity.json { alias /snapshots/dns-activity.json; }
     location = /tor-metrics.json { alias /snapshots/tor-metrics.json; }
+    location = /speed-metrics.json { alias /snapshots/speed-metrics.json; }
     location /client/ { alias /snapshots/client/; }
     location / { try_files $uri $uri/ =404; }
 }
