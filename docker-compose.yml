@@ -213,7 +213,7 @@ services:
       - ./config/gateway/private/router:/etc/nginx/conf.d:ro
       - ./config/portal/www:/usr/share/nginx/html:ro
       - ./config/nginx/www:/snapshots:ro
-    networks: [gateway-app, default]
+    networks: [gateway-app, default, observability-gateway, telemetry-export]
     cap_drop: [ALL]
     cap_add: [CHOWN, SETUID, SETGID]
     security_opt: [no-new-privileges:true]
@@ -401,7 +401,142 @@ services:
         max-size: 2m
         max-file: "2"
 
+  observability-init:
+    profiles: [observability]
+    image: alpine@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
+    network_mode: none
+    user: "0:0"
+    entrypoint: [/bin/sh, -c]
+    command: ["chown ${GATEWAY_UID:-1000}:${GATEWAY_GID:-1000} /grafana && chown 65534:65534 /prometheus && chown 10001:10001 /alloy"]
+    volumes:
+      - grafana-data:/grafana
+      - prometheus-data:/prometheus
+      - alloy-data:/alloy
+    cap_drop: [ALL]
+    cap_add: [CHOWN]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    mem_limit: 32m
+    pids_limit: 16
+    restart: "no"
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:13.3.1@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf
+    user: "${GATEWAY_UID:-1000}:${GATEWAY_GID:-1000}"
+    secrets: [grafana_secret]
+    volumes:
+      - ./config/observability/private/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./config/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/observability/private/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks: [observability-data, observability-gateway]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    mem_limit: 512m
+    cpus: 0.75
+    pids_limit: 192
+    depends_on:
+      observability-init:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_started
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:3000/grafana/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
+    user: "65534:65534"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=3d
+      - --storage.tsdb.retention.size=1GB
+      - --storage.tsdb.wal-compression
+      - --web.enable-remote-write-receiver
+    volumes:
+      - ./config/observability/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    networks: [observability-data]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=8m
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 96
+    depends_on:
+      observability-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:9090/-/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+  alloy:
+    profiles: [observability]
+    image: grafana/alloy:v1.21.3@sha256:8ab871206bd2d8f89277f53abffee5f452a293980788d52f85fa183a87a505a4
+    user: "10001:10001"
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/runtime
+      - --disable-reporting
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./config/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy
+    networks: [observability-data, telemetry-export]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 96
+    depends_on:
+      observability-init:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+
 networks:
+  observability-data:
+    driver: bridge
+    internal: true
+  observability-gateway:
+    driver: bridge
+    internal: true
+  telemetry-export:
+    driver: bridge
+    internal: true
   gateway-edge:
     driver: bridge
   gateway-app:
@@ -409,10 +544,15 @@ networks:
   tor-egress:
     driver: bridge
 volumes:
+  grafana-data:
+  prometheus-data:
+  alloy-data:
   tor-gateway-state:
   elasticsearch-data:
 
 secrets:
+  grafana_secret:
+    file: ./config/observability/private/secrets/grafana_key
   router_username:
     file: ./config/router-inventory/secrets/username
   router_password:

@@ -37,7 +37,7 @@ The only published web listener is HTTPS. DNS, SSH recovery and WireGuard are ne
 
 ## Deployment
 
-Run commands from the repository root on the Pi. One `docker-compose.yml` defines all services. Pi-hole is the default; `gateway`, `tor`, `inventory` and `monitoring` are optional profiles. Profiles start selected services but do not stop containers already running.
+Run commands from the repository root on the Pi. One `docker-compose.yml` defines all services. Pi-hole is the default; `gateway`, `tor`, `inventory`, `observability` and `monitoring` are optional profiles. Profiles start selected services but do not stop containers already running.
 
 Before starting a profile, prepare its private configuration. The ignored `.env` supplies the stable site address and Pi-hole password. Gateway identity and router guest credentials are entered locally using the documented helpers. Certificates must cover the configured hostname and be trusted by clients. Tor requires a separately provisioned private WireGuard configuration. Never store credentials in Git or command arguments, and do not regenerate existing identity encryption keys.
 
@@ -51,6 +51,14 @@ For an already provisioned stack:
 ```
 
 `--prepare` creates missing runtime directories and the Pi-hole log file; it does not reset ownership or rewrite addresses. Setup, private configuration, profile selection and safe maintenance are detailed in [operations](docs/OPERATIONS.md). Optional monitoring has separate resource/configuration requirements and is not enabled by these commands.
+
+## Chitragupt and observability
+
+The portal includes a read-only Chitragupt summary. The optional Grafana/Prometheus/Alloy stack charts host resources, service runtime, anonymous bot registry counts and home/Tor samples through the same login. No direct monitoring ports are published. Real bot heartbeat, application tracing and log collection are not implemented.
+
+- [Chitragupt integration](docs/integrations/CHITRAGUPT.md)
+- [Observability architecture, setup and validation](docs/observability/README.md)
+- [Lightweight operational log events](docs/observability/LOGS.md)
 
 ## Data and operational limits
 

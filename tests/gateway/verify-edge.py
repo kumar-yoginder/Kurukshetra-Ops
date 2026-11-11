@@ -13,6 +13,10 @@ cases = [
     ("GET", "/inventory/", None, 404),
     ("GET", "/inventory/app.js", None, 404),
     ("GET", "/speed-metrics.json", None, 401),
+    ("GET", "/chitragupt.json", None, 401),
+    ("GET", "/log-events.json", None, 401),
+    ("GET", "/grafana/", None, 401),
+    ("GET", "/grafana/api/health", None, 401),
     ("GET", "/api/stats/summary", None, 401),
     ("GET", "/client/ubuntu/tor-client.sh", None, 401),
     ("GET", "/client/windows/windows-tor.ps1", None, 401),
@@ -30,7 +34,7 @@ for method, path, origin, expected in cases:
     result = subprocess.run(command, capture_output=True, text=True, check=True)
     assert result.stdout == str(expected), (method, path, result.stdout, expected)
     print("PASS", method, path, expected)
-for port in (80, 8765):
+for port in (80, 8765, 3000, 9090, 12345, 4317, 4318, 8081):
     try:
         with socket.create_connection(("127.0.0.1", port), 2):
             raise AssertionError("Unexpected direct web listener: " + str(port))

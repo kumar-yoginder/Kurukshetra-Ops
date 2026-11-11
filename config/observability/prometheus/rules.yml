@@ -1,0 +1,14 @@
+{
+  "groups": [
+    {
+      "name": "kurukshetra-host",
+      "interval": "60s",
+      "rules": [
+        {
+          "record": "kurukshetra_host_cpu_usage_percent",
+          "expr": "100 * (1 - sum(rate(kurukshetra_host_cpu_seconds_total{mode=\"idle\"}[5m])) / scalar(kurukshetra_host_cpu_cores))"
+        }
+      ]
+    }
+  ]
+}

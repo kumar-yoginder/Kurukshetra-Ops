@@ -91,3 +91,15 @@ data/pihole/
 
 # Generated private gateway throughput samples
 /config/nginx/www/speed-metrics.json
+
+# Generated aggregate-only bot snapshot
+/config/nginx/www/chitragupt.json
+/config/nginx/www/.chitragupt-*
+
+# Private observability settings and generated metrics
+/config/observability/private/
+/config/nginx/www/telemetry.prom
+/config/nginx/www/.telemetry-*
+
+config/nginx/www/log-events.json
+config/nginx/www/.logs-*

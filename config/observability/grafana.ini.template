@@ -1,0 +1,48 @@
+[server]
+http_addr = 0.0.0.0
+http_port = 3000
+domain = __GATEWAY_HOST__
+root_url = https://__GATEWAY_HOST__/grafana/
+serve_from_sub_path = true
+[security]
+secret_key = $__file{/run/secrets/grafana_secret}
+disable_gravatar = true
+disable_initial_admin_creation = true
+cookie_secure = true
+cookie_samesite = lax
+content_security_policy = true
+[auth]
+disable_login_form = true
+disable_signout_menu = true
+[auth.basic]
+enabled = false
+[auth.anonymous]
+enabled = false
+[auth.proxy]
+enabled = true
+header_name = X-WEBAUTH-USER
+header_property = username
+auto_sign_up = true
+sync_ttl = 0
+enable_login_token = false
+whitelist = __AUTH_PROXY_CIDR__
+[users]
+allow_sign_up = false
+auto_assign_org = true
+auto_assign_org_role = Viewer
+[analytics]
+reporting_enabled = false
+check_for_updates = false
+check_for_plugin_updates = false
+[news]
+news_feed_enabled = false
+[plugins]
+plugin_admin_enabled = false
+preinstall_disabled = true
+[unified_alerting]
+enabled = false
+[dashboards]
+default_home_dashboard_path = /var/lib/grafana/dashboards/overview.json
+[log]
+mode = console
+level = warn

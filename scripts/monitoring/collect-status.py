@@ -10,11 +10,11 @@ import tempfile
 root = Path(__file__).resolve().parents[2]
 services = [('Pi-hole', 'pihole'), ('HTTPS gateway', 'kurukshetra-gateway'),
             ('Certificate service', 'cert-gen'), ('Tor gateway', 'kurukshetra-ops-tor-gateway-1'),
-            ('Bot', 'chitragupt_bot'), ('Central identity', 'kurukshetra-ops-identity-1'),
+            ('Chitragupt', 'chitragupt_bot'), ('Central identity', 'kurukshetra-ops-identity-1'),
             ('Web application firewall', 'kurukshetra-ops-gateway-waf-1'),
             ('Private inventory', 'kurukshetra-ops-router-inventory-1'),
             ('Pi-hole session bridge', 'kurukshetra-ops-pihole-bridge-1'),
-            ('Application router', 'kurukshetra-ops-web-router-1'), ('Elasticsearch', 'elasticsearch'),
+            ('Application router', 'kurukshetra-ops-web-router-1'), ('Grafana', 'kurukshetra-ops-grafana-1'), ('Prometheus', 'kurukshetra-ops-prometheus-1'), ('Grafana Alloy', 'kurukshetra-ops-alloy-1'), ('Elasticsearch', 'elasticsearch'),
             ('Kibana', 'kibana'), ('Filebeat', 'filebeat')]
 rows = []
 for label, container in services:
@@ -63,5 +63,23 @@ finally:
 # DNS collection failure never blocks the existing service summary.
 try:
     subprocess.run(["/usr/bin/python3", str(root / "scripts/monitoring/collect-dns-activity.py")], timeout=30, check=False)
+except (OSError, subprocess.TimeoutExpired):
+    pass
+
+# Read-only integration; the bot lifecycle remains in its separate Compose project.
+try:
+    subprocess.run(["/usr/bin/python3", str(root / "scripts/monitoring/collect-chitragupt.py")], timeout=15, check=False)
+except (OSError, subprocess.TimeoutExpired):
+    pass
+
+# Safe host telemetry is optional; missing tools must not stop the status page.
+try:
+    subprocess.run(["/usr/bin/python3", str(root / "scripts/monitoring/collect-observability.py")], timeout=20, check=False)
+except (OSError, subprocess.TimeoutExpired):
+    pass
+
+# Bounded sanitized operational events; reuse the existing minute schedule.
+try:
+    subprocess.run(["/usr/bin/python3", str(root / "scripts/monitoring/collect-logs.py")], timeout=28, check=False)
 except (OSError, subprocess.TimeoutExpired):
     pass

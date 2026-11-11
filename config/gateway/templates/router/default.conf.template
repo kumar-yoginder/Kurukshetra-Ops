@@ -91,6 +91,24 @@ server {
         proxy_set_header X-Gateway-Client-IP $http_x_gateway_client_ip;
         proxy_set_header Connection "";
     }
+    location = /grafana { return 308 /grafana/; }
+    location /grafana/ {
+        if ($reject_origin) { return 403; }
+        set $grafana http://grafana:3000;
+        proxy_pass $grafana;
+        proxy_set_header Host __GATEWAY_HOST__;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Host __GATEWAY_HOST__;
+        proxy_set_header X-Forwarded-For $http_x_gateway_client_ip;
+        proxy_set_header X-WEBAUTH-USER $authenticated_user;
+        proxy_set_header X-WEBAUTH-ROLE "";
+        proxy_set_header X-WEBAUTH-EMAIL "";
+        proxy_set_header Authorization "";
+        proxy_set_header Cookie "";
+        proxy_set_header Connection "";
+        # Grafana provides its managed application CSP.
+        add_header Cache-Control no-store always;
+    }
     location /kibana/ {
         if ($reject_origin) { return 403; }
         set $kibana http://kibana:5601;
@@ -108,9 +126,26 @@ server {
         proxy_set_header Connection "";
     }
     location = /status.json { alias /snapshots/status.json; }
+    location = /log-events.json { alias /snapshots/log-events.json; add_header Cache-Control no-store always; }
+    location = /chitragupt.json { alias /snapshots/chitragupt.json; }
     location = /dns-activity.json { alias /snapshots/dns-activity.json; }
     location = /tor-metrics.json { alias /snapshots/tor-metrics.json; }
     location = /speed-metrics.json { alias /snapshots/speed-metrics.json; }
     location /client/ { alias /snapshots/client/; }
     location / { try_files $uri $uri/ =404; }
+}
+
+# Internal scrape listener only; never forwarded by the external gateway.
+server {
+    listen 8081;
+    server_name _;
+    server_tokens off;
+    access_log off;
+    location = /metrics {
+        limit_except GET { deny all; }
+        default_type text/plain;
+        alias /snapshots/telemetry.prom;
+        add_header Cache-Control no-store always;
+    }
+    location / { return 404; }
 }

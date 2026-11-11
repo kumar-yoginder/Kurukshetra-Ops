@@ -1,0 +1,109 @@
+logging {
+  level = "warn"
+  format = "json"
+}
+
+prometheus.scrape "kurukshetra" {
+  targets = [{"__address__" = "web-router:8081", "instance" = "pi"}]
+  job_name = "kurukshetra"
+  scrape_interval = "60s"
+  scrape_timeout = "10s"
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+    send_exemplars = false
+    follow_redirects = false
+  }
+}
+
+otelcol.receiver.otlp "applications" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+    max_recv_msg_size = "1MiB"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+    max_request_body_size = "1MiB"
+  }
+  output {
+    metrics = [otelcol.processor.memory_limiter.applications.input]
+  }
+}
+
+otelcol.processor.memory_limiter "applications" {
+  check_interval = "1s"
+  limit = "128MiB"
+  spike_limit = "32MiB"
+  output {
+    metrics = [otelcol.processor.filter.allowed_metrics.input]
+  }
+}
+
+otelcol.processor.filter "allowed_metrics" {
+  error_mode = "propagate"
+  metric_conditions {
+    context = "metric"
+    conditions = [
+      `not IsMatch(name, "^(chitragupt_poll_duration_seconds|chitragupt_poll_total|chitragupt_poll_failures_total|chitragupt_updates_processed_total|kurukshetra_otel_pipeline_probe)$")`,
+    ]
+  }
+  output {
+    metrics = [otelcol.processor.transform.privacy.input]
+  }
+}
+
+otelcol.processor.transform "privacy" {
+  error_mode = "propagate"
+  metric_statements {
+    context = "resource"
+    statements = [
+      `keep_keys(attributes, [])`,
+      `set(attributes["service.name"], "application")`,
+    ]
+  }
+  metric_statements {
+    context = "scope"
+    statements = [
+      `set(name, "safe_application_metrics")`,
+      `set(version, "")`,
+      `keep_keys(attributes, [])`,
+    ]
+  }
+  metric_statements {
+    context = "metric"
+    statements = [
+      `set(description, "")`,
+      `set(unit, "")`,
+    ]
+  }
+  metric_statements {
+    context = "datapoint"
+    statements = [
+      `keep_keys(attributes, [])`,
+    ]
+  }
+  output {
+    metrics = [otelcol.processor.batch.applications.input]
+  }
+}
+
+otelcol.processor.batch "applications" {
+  timeout = "10s"
+  send_batch_size = 256
+  send_batch_max_size = 512
+  output {
+    metrics = [otelcol.exporter.prometheus.local.input]
+  }
+}
+
+otelcol.exporter.prometheus "local" {
+  add_metric_suffixes = false
+  include_scope_info = false
+  include_scope_labels = false
+  include_target_info = false
+  resource_to_telemetry_conversion = false
+  forward_to = [prometheus.remote_write.local.receiver]
+}

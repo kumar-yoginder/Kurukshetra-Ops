@@ -5,11 +5,12 @@ PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
 usage() {
     cat <<'HELP'
-Usage: ./deploy.sh [--gateway] [--tor] [--inventory] [--prepare] [COMPOSE COMMAND...]
+Usage: ./deploy.sh [--gateway] [--tor] [--inventory] [--observability] [--prepare] [COMPOSE COMMAND...]
 Default: Pi-hole only, up -d. --tor enables the Tor profile.
 --gateway enables HTTPS gateway and certificate services.
 --monitoring enables Elasticsearch, Filebeat and Kibana (configure them first).
 --inventory enables the private router collector (configure guest secrets first).
+--observability enables local Grafana, Prometheus and Alloy (configure it first).
 --prepare creates missing runtime mount paths without changing existing ownership.
 --configure-only validates configuration without starting services.
 Examples:
@@ -25,11 +26,13 @@ profiles=()
 prepare=false
 validate_only=false
 tor=false
+observability=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --gateway) profiles+=(--profile gateway); shift ;;
         --monitoring) profiles+=(--profile monitoring); shift ;;
         --inventory) profiles+=(--profile inventory); shift ;;
+        --observability) observability=true; profiles+=(--profile observability); shift ;;
         --tor) tor=true; profiles+=(--profile tor); shift ;;
         --prepare) prepare=true; shift ;;
         --configure-only) validate_only=true; shift ;;
@@ -55,6 +58,9 @@ if "$prepare"; then
     fi
 fi
 if "$prepare" || { ! "$validate_only" && [[ "${1:-up}" == up ]]; }; then
+    if "$observability" && [[ -f config/observability/private/grafana.ini ]]; then
+        python3 scripts/monitoring/publish-observability.py
+    fi
     python3 scripts/tor-client/publish-downloads.py
 fi
 if "$validate_only"; then exit 0; fi

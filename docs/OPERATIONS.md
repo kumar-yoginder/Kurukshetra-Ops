@@ -21,7 +21,7 @@ Gateway and inventory bootstrap, secret-file boundaries and lifecycle caveats ar
 ./deploy.sh --gateway --tor --inventory logs --tail 30
 ```
 
-One Compose file defines all services. Pi-hole starts by default; gateway, Tor, inventory and monitoring use opt-in profiles. Profiles select what starts, not what stops. The bot is managed by its separate Compose project. `--prepare` creates missing runtime paths and a regular Pi-hole log file; it does not reset ownership or change host networking. There is no automatic address discovery or recursive permission repair.
+One Compose file defines all services. Pi-hole starts by default; gateway, Tor, inventory, observability and monitoring use opt-in profiles. Profiles select what starts, not what stops. The bot is managed by its separate Compose project. `--prepare` creates missing runtime paths and a regular Pi-hole log file; it does not reset ownership or change host networking. There is no automatic address discovery or recursive permission repair.
 
 | Task | Command / guide |
 | --- | --- |
@@ -84,3 +84,11 @@ Deployment startup/preparation and status-schedule setup call the publisher. Aft
 ## Documentation captures
 
 Use only the loopback synthetic preview documented in [screenshot workflow](ui/SCREENSHOTS.md). The preview does not read production data or secrets, and must never be deployed as an unauthenticated production route. No production service restart is needed to edit Markdown or update approved screenshots.
+
+## Metrics observability
+
+The deployed metrics-only `observability` profile is separate from the legacy `monitoring` profile. Grafana shares the central login under `/grafana/`; Prometheus and Alloy stay internal. Host and anonymous Chitragupt aggregates refresh every minute. See [observability operations](observability/README.md) for provisioning, limits, verification and safe stop commands. Raw logs, traces and real bot OTLP instrumentation are not enabled.
+
+## Operational log events
+
+Select Logs in the portal for sanitized categories from the existing minute job. This adds no container or database. The bounded snapshot retains up to 24 hours / 2,000 events; raw messages remain local. See [log viewer limits and maintenance](observability/LOGS.md).
